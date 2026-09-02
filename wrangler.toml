@@ -2,32 +2,14 @@ name = "pwafy-worker"
 main = "worker/proxy-worker.js"
 compatibility_date = "2024-09-23"
 
-# Plain (non-secret) environment variables. Secrets (PAYSTACK_SECRET_KEY,
-# SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY) do NOT go here —
-# they're set with `wrangler secret put <NAME>` for production, and in
-# `.dev.vars` (gitignored) for local testing. See LOCAL_TESTING.md.
 [vars]
 SUPABASE_URL = "https://erwfyqpltzpvqerxaqpn.supabase.co"
-# Comma-separated list of browser origins allowed to call this Worker.
-# Add your production domain once you have one, e.g.
-# "http://localhost:3000,https://pwafy.app" — anything not in this list
-# gets refused by the browser (see corsHeaders() in proxy-worker.js).
-ALLOWED_ORIGINS = "http://localhost:3000"
 
-# Runs daily at 03:00 UTC — downgrades any studio/agency profile whose
-# plan_expires_at has passed back to 'free'. See the `scheduled` export
-# in proxy-worker.js. Card/transfer charges via Paystack Inline are
-# one-off, so this cron is what actually makes "per month" pricing mean
-# something instead of one payment granting access forever.
+ALLOWED_ORIGINS = "https://pwafy-worker.ayocodes-pwafy.workers.dev/"
+
 [triggers]
 crons = ["0 3 * * *"]
 
-# Create these with:
-#   wrangler kv:namespace create SCAN_CACHE
-#   wrangler kv:namespace create SCAN_CACHE --preview
-#   wrangler kv:namespace create RATE_LIMIT
-#   wrangler kv:namespace create RATE_LIMIT --preview
-# then paste the ids each command prints in below.
 [[kv_namespaces]]
 binding = "SCAN_CACHE"
 id = "937c48bcde774b2fb307041629adb4bc"

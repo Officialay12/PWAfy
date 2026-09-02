@@ -1,4 +1,4 @@
-name = "pwafy-worker"
+ name = "pwafy-api"
 main = "worker/proxy-worker.js"
 compatibility_date = "2024-09-23"
 

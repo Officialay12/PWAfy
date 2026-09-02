@@ -4,21 +4,10 @@
    Built by AYOCODES
    =========================================================== */
 
-/* ---------------- Config ----------------
-   Everything here points at free-tier services only:
-   - Supabase free project (auth + Postgres)      -> accounts/presets
-   - Cloudflare Workers free tier (100k req/day)   -> scan proxy + payment verification
-   - Cloudflare Workers KV free tier                -> scan result cache, rate limiting
-   - Cloudflare Turnstile (free, unlimited)         -> abuse protection on the scan endpoint
-   - Paystack (free to integrate, they take a %      -> cards + pay-with-transfer, NGN
-     per transaction, no monthly cost)
-   Leave any value below as-is to run PWAfy with that feature switched off —
-   nothing breaks either way, this is all additive.
-*/
 const CONFIG = {
   SUPABASE_URL: "https://erwfyqpltzpvqerxaqpn.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_03FBVxS0kMjKtvoQgFGhHg_v3Fqf1at",
-  PROXY_URL: "https://pwafy-worker.ayocodes-pwafy.workers.dev",
+  PROXY_URL: "https://pwafy.ayocodes-pwafy.workers.dev",
   TURNSTILE_SITE_KEY: "YOUR_TURNSTILE_SITE_KEY",
   PAYSTACK_PUBLIC_KEY: "pk_live_248867e9f19f57916d0b5e4fd55ba30712aa5cbf",
   STUDIO_PRICE_NGN: 4000,

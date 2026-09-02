@@ -1,11 +1,12 @@
- name = "pwafy-api"
+name = "pwafy-api"
 main = "worker/proxy-worker.js"
 compatibility_date = "2024-09-23"
 
 [vars]
 SUPABASE_URL = "https://erwfyqpltzpvqerxaqpn.supabase.co"
 
-ALLOWED_ORIGINS = "https://pwa.ayocodes-pwafy.workers.dev/"
+ALLOWED_ORIGINS = "https://pwa.ayocodes-pwafy.workers.dev"
+
 
 [triggers]
 crons = ["0 3 * * *"]

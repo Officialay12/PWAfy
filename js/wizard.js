@@ -815,13 +815,19 @@ async function runGenerate() {
   btn.disabled = true;
   document.getElementById("doneArea").innerHTML = "";
 
-  // Free-tier build cap only applies to signed-in accounts, there's no way
-  // to enforce a per-browser limit for anonymous visitors, so this check is
-  // skipped entirely when signed out (matches the "no account needed for a
-  // single build" promise on the marketing page). consume_build_credit() is
-  // the real enforcement (see supabase-schema.sql); it can't be bypassed by
-  // calling the Supabase API directly the way a purely client-side check
-  // could be.
+  // Free-tier build cap has two enforcement paths:
+  //  - Signed-in free accounts: consume_build_credit() is the real,
+  //    server-side enforcement (see supabase-schema.sql). It can't be
+  //    bypassed by calling the Supabase API directly, since it runs
+  //    SECURITY DEFINER and checks builds_used itself.
+  //  - Anonymous visitors (or accounts when Supabase isn't configured):
+  //    there is no account row to check server-side, so this is a
+  //    client-side "one build per browser" cap via localStorage. It's a
+  //    UX nudge, not a security boundary, it can be cleared like any
+  //    other site data, but it stops the trivial "just click Generate
+  //    again" loop and matches the "Free: one build per account or
+  //    browser session" copy PWAfy actually advertises.
+  const FREE_BUILD_LOCAL_KEY = "pwafy_free_build_used";
   if (auth.user && supabaseClient && auth.plan === "free") {
     const { data: allowed, error } = await supabaseClient.rpc(
       "consume_build_credit",
@@ -841,6 +847,21 @@ async function runGenerate() {
       return;
     }
     auth.buildsUsed += 1;
+  } else if (!auth.user || auth.plan === "free") {
+    // Signed-out visitor, or signed in but the backend isn't configured
+    // (SUPABASE_CONFIGURED false) so there's nothing to call server-side.
+    let alreadyUsed = false;
+    try {
+      alreadyUsed = !!localStorage.getItem(FREE_BUILD_LOCAL_KEY);
+    } catch (e) {
+      /* private browsing / storage disabled: fail open, same as before */
+    }
+    if (alreadyUsed) {
+      document.getElementById("doneArea").innerHTML =
+        '<div class="err-list">You\u2019ve already used this browser\u2019s free build. <a href="#pricing">Sign in and upgrade to Studio</a> for unlimited builds.</div>';
+      btn.disabled = false;
+      return;
+    }
   }
 
   try {
@@ -947,6 +968,19 @@ async function runGenerate() {
     document.body.appendChild(a);
     a.click();
     a.remove();
+
+    // Mark this browser's free build as used only once a build actually
+    // succeeds (mirrors auth.buildsUsed, which the signed-in path above
+    // increments on a granted credit regardless of what happens next —
+    // consistent either way, but doing it on success here means a failed
+    // build never burns the visitor's one free try).
+    if (!auth.user || auth.plan === "free") {
+      try {
+        localStorage.setItem(FREE_BUILD_LOCAL_KEY, "1");
+      } catch (e) {
+        /* private browsing / storage disabled: nothing to persist */
+      }
+    }
 
     const allFiles = iconFiles.concat(maskableFiles).concat(splashFiles);
     if (faviconFile) allFiles.push(faviconFile);

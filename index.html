@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PWAfy — turn any site into an installable app</title>
+  <title>PWAfy — turn client sites into installable apps</title>
   <meta name="description"
-    content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker plus a quality score so you know it's right." />
+    content="Built for freelancers and agencies shipping PWAs for clients. Scan a URL or fill in the details yourself — PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker, scored so you can show it's done right." />
   <link rel="canonical" href="https://pwa.ayocodes-pwafy.workers.dev/" />
 
   <!-- Favicons -->
@@ -156,10 +156,11 @@
     <div>
       <p class="hero-kicker"><span class="swatch"></span>manifest.json &middot; icons &middot; splash &middot;
         service-worker.js</p>
-      <h1 class="hero-title">Turn any site into an installable app in one pass.</h1>
-      <p class="hero-sub">Paste a URL or fill in the details yourself. PWAfy generates a complete, spec-correct
-        manifest, a full icon set with iOS splash screens, and a working service worker then scores it so you know it
-        actually works.</p>
+      <h1 class="hero-title">Turn client sites into installable apps, ready to hand off.</h1>
+      <p class="hero-sub">Built for freelancers and agencies shipping PWAs for other people's sites — scan a URL or
+        fill in the details yourself, and get a complete, spec-correct manifest, a full icon set with iOS splash
+        screens, and a working service worker, scored so you can show the client it's done right. Solo builders get
+        the exact same tool, free for one build.</p>
       <div class="hero-actions">
         <button class="btn-primary" id="btnHeroStart">Build my PWA</button>
         <button class="btn-ghost" id="btnHeroHow">See how it works</button>
@@ -198,6 +199,46 @@
       <div class="lbl">files uploaded to a server</div>
     </div>
   </div>
+
+  <section id="proof" style="margin-top:8px;">
+    <div class="section-head">
+      <h2>What a scan actually turns into</h2>
+      <p>An illustrative walkthrough — not a real customer — using the same fictional coffee-shop site from the
+        example above, so you can see the three-step shape of a build before you try it on a real URL.</p>
+    </div>
+    <div class="proof-strip">
+      <div class="proof-panel">
+        <div class="pf-step">01 &middot; Start</div>
+        <div class="pf-title">Paste a URL</div>
+        <div class="proof-mock">
+          <div class="addr">&#128274; northwindcoffee.com</div>
+          <div style="color:#8B968F;">Scanning for name, icon, theme color&hellip;</div>
+        </div>
+      </div>
+      <div class="proof-panel">
+        <div class="pf-step">02 &middot; Generate</div>
+        <div class="pf-title">PWAfy builds the files</div>
+        <div class="proof-mock">
+          <div class="chip-list">
+            <span class="chip">manifest.json</span>
+            <span class="chip">8 icon sizes</span>
+            <span class="chip">6 iOS splash</span>
+            <span class="chip">sw.js</span>
+          </div>
+        </div>
+      </div>
+      <div class="proof-panel">
+        <div class="pf-step">03 &middot; Hand off</div>
+        <div class="pf-title">Installed like an app</div>
+        <div class="proof-mock">
+          <div class="icon-mock">N</div>
+          <div class="home-label">Northwind Coffee &middot; added to home screen</div>
+        </div>
+      </div>
+    </div>
+    <p class="proof-caption">Try it yourself with a real URL in the builder below &mdash; nothing here is faked, it's
+      the same output the tool produces.</p>
+  </section>
 
   <section id="how">
     <div class="section-head">
@@ -345,30 +386,34 @@
         </ul>
         <button class="btn-ghost" id="btnStartFree">Start building</button>
       </div>
-      <div class="price-card feat">
+      <div class="price-card">
         <div class="pname">Studio</div>
         <div class="pcost" id="studioPrice">&#8358;4,000</div>
         <div class="pperiod" id="studioPeriod">per month &middot; unlimited builds</div>
         <ul>
-          <li>Unlimited projects &amp; re-generation</li>
-          <li>Unlimited saved brand presets</li>
-          <li>All caching strategies + iOS splash set</li>
-          <li>Priority icon processing</li>
+          <li>Unlimited builds &amp; re-generation</li>
+          <li>Up to 10 saved brand presets</li>
+          <li>App shortcuts &amp; screenshots for a richer install prompt</li>
+          <li>Full icon set, iOS splash &amp; caching output — no build cap</li>
         </ul>
-        <button class="btn-primary" id="btnUpgradeStudio">Upgrade to Studio</button>
+        <button class="btn-ghost" id="btnUpgradeStudio">Upgrade to Studio</button>
         <button class="btn-ghost" id="btnTransferStudio" style="margin-top:8px;">Pay with bank transfer</button>
       </div>
-      <div class="price-card">
-        <div class="pname">Agency</div>
+      <div class="price-card feat">
+        <div class="pname-row">
+          <div class="pname">Agency</div>
+          <span class="rec-badge">For client work</span>
+        </div>
         <div class="pcost" id="agencyPrice">&#8358;12,000</div>
         <div class="pperiod" id="agencyPeriod">per month &middot; for client work</div>
         <ul>
           <li>Everything in Studio</li>
-          <li>White-labelled output</li>
-          <li>Client handoff docs included</li>
-          <li>Team seats</li>
+          <li>Unlimited saved brand presets</li>
+          <li>Web Push boilerplate add-on (VAPID keys + subscribe code)</li>
+          <li>White-labelled output, no PWAfy branding</li>
+          <li>Team workspace &mdash; up to 5 seats, shared presets</li>
         </ul>
-        <button class="btn-ghost" id="btnUpgradeAgency">Upgrade to Agency</button>
+        <button class="btn-primary" id="btnUpgradeAgency">Upgrade to Agency</button>
         <button class="btn-ghost" id="btnTransferAgency" style="margin-top:8px;">Pay with bank transfer</button>
       </div>
     </div>
@@ -376,6 +421,46 @@
     <p style="font-size:12px;color:var(--ink-faint);margin-top:18px;">Card charges settle in naira; the amount shown in
       another currency is an approximate guide your bank applies its own exchange rate. Bank transfer is only
       available in naira.</p>
+  </section>
+
+  <section id="faq" style="margin-top:96px;">
+    <div class="section-head">
+      <h2>Questions</h2>
+      <p>The things people usually ask before trying it on a real client site.</p>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>How is this different from PWABuilder or other site-to-app tools?</summary>
+        <p>PWAfy is built around the workflow of shipping PWAs for other people's sites, not just your own: brand
+          presets you can reuse across client projects, a shared team workspace on the Agency plan, and
+          white-labelled output with no PWAfy branding. Every build is also checked against a quality score covering
+          maskable icon padding, per-device iOS splash sizes, and manifest spec compliance, with a plain-language list
+          of anything that's missing rather than just a pass or fail.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do you store my site or my files?</summary>
+        <p>No. Icon processing and file generation happen in your browser. If you scan a URL to prefill fields,
+          PWAfy's server only reads the page's public title, description, theme color, and icon link &mdash; nothing
+          else is stored beyond a short cache used to speed up repeat scans of the same page.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What happens after I pay?</summary>
+        <p>Card and bank transfer payments are verified server-side directly against Paystack &mdash; your plan
+          updates automatically once the charge or transfer is confirmed, usually within a minute. Paid plans run for
+          30 days at a time.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I use this for client work?</summary>
+        <p>Yes &mdash; that's what the Agency plan is for: unlimited builds and presets, white-labelled output with no
+          PWAfy branding, the Web Push add-on, and a shared team workspace for up to 5 seats with invite codes for
+          teammates.</p>
+      </details>
+      <details class="faq-item">
+        <summary>I don't have a Nigerian bank account &mdash; can I still pay?</summary>
+        <p>Yes. Card payments are accepted from anywhere and settle in naira; the price shown in another currency is
+          an approximate guide only. Bank transfer is naira-only, for users paying from a Nigerian bank.</p>
+      </details>
+    </div>
   </section>
 
   <footer>

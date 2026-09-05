@@ -1,0 +1,25 @@
+{
+  "name": "pwafy",
+  "version": "1.0.0",
+  "description": "PWAfy is the only PWA generator that actually does the whole job manifests, icons, iOS splash screens, service workers, and a quality score that tells you if it's right. One build is free. When you need more, it's ₦4,000/month. No uploads. No server fees. Just a ZIP file that works.\r    by ayocodes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Officialay12/PWAfy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Officialay12/PWAfy/issues"
+  },
+  "homepage": "https://github.com/Officialay12/PWAfy#readme",
+  "dependencies": {
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1"
+  }
+}

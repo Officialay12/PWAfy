@@ -95,7 +95,7 @@ function renderAccountBar() {
         : "";
     const teamBtn =
       auth.plan === "agency" ? '<button id="btnOpenTeam">Team</button>' : "";
-    slot.innerHTML = `<div class="account-chip"><span class="avatar">${initial}</span>${escapeHtml(auth.user.email)} &middot; ${planBadge(auth.plan)}${teamBtn}${cancelBtn}<button id="btnSignOut">Sign out</button></div>`;
+    slot.innerHTML = `<div class="account-chip"><span class="avatar">${initial}</span><span class="chip-email" title="${escapeHtml(auth.user.email)}">${escapeHtml(auth.user.email)}</span> &middot; ${planBadge(auth.plan)}${teamBtn}${cancelBtn}<button id="btnSignOut">Sign out</button></div>`;
     document.getElementById("btnSignOut").onclick = signOut;
     const cancelEl = document.getElementById("btnCancelPlan");
     if (cancelEl) cancelEl.onclick = cancelPlan;
@@ -311,14 +311,20 @@ async function saveCurrentAsPreset() {
         '<div class="status-line warn">Sign in first to save a preset.</div>';
     return;
   }
-  // This client-side check is UX only, so the free-tier limit shows up
+  // This client-side check is UX only, so the plan limit shows up
   // immediately without a round trip. The real enforcement is the
   // enforce_preset_limit trigger in Postgres (see supabase-schema.sql),
   // which runs no matter how the insert is made.
   if (auth.plan === "free" && auth.presets.length >= 1) {
     if (statusEl)
       statusEl.innerHTML =
-        '<div class="status-line warn">Free accounts keep 1 saved preset. <a href="#pricing">Upgrade to Studio</a> for unlimited presets.</div>';
+        '<div class="status-line warn">Free accounts keep 1 saved preset. <a href="#pricing">Upgrade to Studio</a> for more.</div>';
+    return;
+  }
+  if (auth.plan === "studio" && auth.presets.length >= 10) {
+    if (statusEl)
+      statusEl.innerHTML =
+        '<div class="status-line warn">Studio accounts keep 10 saved presets. <a href="#pricing">Upgrade to Agency</a> for unlimited presets.</div>';
     return;
   }
   const name = prompt(
@@ -584,7 +590,7 @@ async function renderTeamPanel(errorMsg, freshInviteCode) {
 
   let rosterHtml =
     '<div class="status-line info">Loading team roster\u2026</div>';
-  body.innerHTML += `<h4>${escapeHtml(auth.team.name)}</h4><div id="teamRoster">${rosterHtml}</div>`;
+  body.innerHTML += `<h4>${escapeHtml(auth.team.name)} <span id="teamSeatCount" style="font-family:var(--mono);font-size:12px;color:var(--ink-faint);font-weight:400;">&middot; loading seats&hellip;</span></h4><div id="teamRoster">${rosterHtml}</div>`;
 
   if (auth.team.myRole === "owner") {
     body.innerHTML += `
@@ -606,6 +612,7 @@ async function renderTeamPanel(errorMsg, freshInviteCode) {
     { p_team_id: auth.team.id },
   );
   const rosterEl = document.getElementById("teamRoster");
+  const seatEl = document.getElementById("teamSeatCount");
   if (rosterEl) {
     if (rosterErr || !roster) {
       rosterEl.innerHTML =
@@ -617,6 +624,15 @@ async function renderTeamPanel(errorMsg, freshInviteCode) {
             `<div class="roster-row"><span class="roster-email">${escapeHtml(m.email)}</span><span class="roster-role">${m.role}</span></div>`,
         )
         .join("");
+      if (seatEl) seatEl.textContent = `\u00b7 ${roster.length}/5 seats`;
+      // Team plan cap — Agency includes up to 5 seats. Disabling the button
+      // client-side just avoids a surprise error; create_team_invite()'s own
+      // count check is the real limit no matter how the call is made.
+      const genBtn = document.getElementById("btnGenInvite");
+      if (genBtn && roster.length >= 5) {
+        genBtn.disabled = true;
+        genBtn.textContent = "Team full (5/5 seats)";
+      }
     }
   }
 }

@@ -664,11 +664,11 @@ function renderBehavior() {
     </div>
     <div class="field">
       <label>Web Push (optional add-on)</label>
-      <label class="radio-card${state.includePush ? " selected" : ""}" id="pushToggleRow" style="cursor:${auth.plan !== "free" ? "pointer" : "not-allowed"};opacity:${auth.plan !== "free" ? "1" : "0.6"};">
-        <input type="checkbox" id="pushToggle" ${state.includePush ? "checked" : ""} ${auth.plan === "free" ? "disabled" : ""}>
+      <label class="radio-card${state.includePush ? " selected" : ""}" id="pushToggleRow" style="cursor:${auth.plan === "agency" ? "pointer" : "not-allowed"};opacity:${auth.plan === "agency" ? "1" : "0.6"};">
+        <input type="checkbox" id="pushToggle" ${state.includePush ? "checked" : ""} ${auth.plan !== "agency" ? "disabled" : ""}>
         <div>
-          <div class="rt">Generate Web Push boilerplate</div>
-          <div class="rd">${auth.plan === "free" ? 'A real VAPID keypair plus service-worker and subscribe code, ready to wire up your own push server. <a href="#pricing">Upgrade to Studio</a> to include it.' : "A real VAPID keypair plus service-worker and subscribe code, ready to wire up your own push server."}</div>
+          <div class="rt">Generate Web Push boilerplate <span style="font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);">Agency</span></div>
+          <div class="rd">${auth.plan !== "agency" ? 'A real VAPID keypair plus service-worker and subscribe code, ready to wire up your own push server. <a href="#pricing">Upgrade to Agency</a> to include it.' : "A real VAPID keypair plus service-worker and subscribe code, ready to wire up your own push server."}</div>
         </div>
       </label>
     </div>
@@ -716,7 +716,7 @@ function renderBehavior() {
   document.getElementById("btnBack3").onclick = prevStep;
   document.getElementById("btnNext3").onclick = nextStep;
   const pushToggle = document.getElementById("pushToggle");
-  if (pushToggle && auth.plan !== "free") {
+  if (pushToggle && auth.plan === "agency") {
     pushToggle.onchange = (e) => {
       state.includePush = e.target.checked;
       renderStepBody();
@@ -869,7 +869,7 @@ async function runGenerate() {
     const screenshotFiles = await generateScreenshotFiles();
 
     let vapidKeys = null;
-    if (state.includePush && auth.plan !== "free") {
+    if (state.includePush && auth.plan === "agency") {
       setProgress(76, "Generating push keys\u2026");
       await tick();
       vapidKeys = await generateVapidKeys();

@@ -175,7 +175,12 @@ begin
   if user_plan = 'free' then
     select count(*) into existing_count from public.presets where user_id = new.user_id;
     if existing_count >= 1 then
-      raise exception 'Free accounts keep 1 saved preset. Upgrade to Studio for unlimited presets.';
+      raise exception 'Free accounts keep 1 saved preset. Upgrade to Studio for more.';
+    end if;
+  elsif user_plan = 'studio' then
+    select count(*) into existing_count from public.presets where user_id = new.user_id;
+    if existing_count >= 10 then
+      raise exception 'Studio accounts keep 10 saved presets. Upgrade to Agency for unlimited presets.';
     end if;
   end if;
 
@@ -445,16 +450,22 @@ $$ language plpgsql security definer;
 
 grant execute on function public.create_team(text) to authenticated;
 
--- create_team_invite(): only the team owner can mint invite codes.
+-- create_team_invite(): only the team owner can mint invite codes, and only
+-- while the team is under the 5-seat cap.
 create or replace function public.create_team_invite(p_team_id uuid)
 returns text as $$
 declare
   is_owner boolean;
+  member_count integer;
   new_code text;
 begin
   select (owner_id = auth.uid()) into is_owner from public.teams where id = p_team_id;
   if is_owner is not true then
     raise exception 'Only the team owner can invite members';
+  end if;
+  select count(*) into member_count from public.team_members where team_id = p_team_id;
+  if member_count >= 5 then
+    raise exception 'This team is already at its 5-seat limit';
   end if;
   insert into public.team_invites (team_id, created_by)
     values (p_team_id, auth.uid())
@@ -484,6 +495,9 @@ begin
   end if;
   if exists (select 1 from public.team_members where user_id = auth.uid()) then
     raise exception 'You already belong to a team';
+  end if;
+  if (select count(*) from public.team_members where team_id = inv.team_id) >= 5 then
+    raise exception 'This team is already at its 5-seat limit';
   end if;
   insert into public.team_members (team_id, user_id, role)
     values (inv.team_id, auth.uid(), 'member');

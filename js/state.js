@@ -4,7 +4,6 @@
    Built by AYOCODES
    =========================================================== */
 
-<<<<<<< HEAD
 /* ---------------- Config ----------------
    Everything here points at free-tier services only:
    - Supabase free project (auth + Postgres)      -> accounts/presets
@@ -16,8 +15,6 @@
    Leave any value below as-is to run PWAfy with that feature switched off —
    nothing breaks either way, this is all additive.
 */
-=======
->>>>>>> origin/main
 const CONFIG = {
   SUPABASE_URL: "https://erwfyqpltzpvqerxaqpn.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_03FBVxS0kMjKtvoQgFGhHg_v3Fqf1at",
@@ -53,7 +50,6 @@ const state = {
   orientation: "any",
   strategy: "stale-while-revalidate",
   phoneView: "home",
-<<<<<<< HEAD
   previewDevice: "phone", // 'phone' | 'desktop'
   previewPlatform: "android", // 'android' | 'ios' — only affects the install view
   includeSplash: true,
@@ -69,13 +65,6 @@ const state = {
 // the two can never disagree about a screenshot's final size.
 const SCREENSHOT_MAX_DIM = 1280;
 
-=======
-  includeSplash: true,
-  includeFavicon: true,
-  includeShortcuts: false,
-};
-
->>>>>>> origin/main
 const STEP_DEFS = [
   { key: "source", label: "Source" },
   { key: "identity", label: "Identity" },

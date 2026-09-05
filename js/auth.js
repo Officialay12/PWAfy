@@ -8,18 +8,14 @@
 const auth = {
   user: null,
   presets: [],
-<<<<<<< HEAD
   builds: [],
   team: null,
-=======
->>>>>>> origin/main
   plan: "free",
   planExpiresAt: null,
   buildsUsed: 0,
 };
 let supabaseClient = null;
 
-<<<<<<< HEAD
 // Turnstile widget state for the auth modal — same pattern as the scan
 // step's widget in wizard.js. A no-op whenever Turnstile isn't configured,
 // so this stays completely inert until a real TURNSTILE_SITE_KEY is set.
@@ -47,8 +43,6 @@ function renderAuthTurnstileWidget() {
   });
 }
 
-=======
->>>>>>> origin/main
 if (SUPABASE_CONFIGURED && window.supabase && window.supabase.createClient) {
   try {
     supabaseClient = window.supabase.createClient(
@@ -79,7 +73,6 @@ function formatPlanExpiry(iso) {
   }
 }
 
-<<<<<<< HEAD
 function renderAccountSkeleton() {
   const slot = document.getElementById("accountSlot");
   if (!slot || !SUPABASE_CONFIGURED) return;
@@ -87,8 +80,6 @@ function renderAccountSkeleton() {
     '<div class="skeleton skeleton-chip" aria-hidden="true"></div>';
 }
 
-=======
->>>>>>> origin/main
 function renderAccountBar() {
   const slot = document.getElementById("accountSlot");
   if (!slot) return;
@@ -102,7 +93,6 @@ function renderAccountBar() {
       auth.plan !== "free"
         ? '<button id="btnCancelPlan">Cancel plan</button>'
         : "";
-<<<<<<< HEAD
     const teamBtn =
       auth.plan === "agency" ? '<button id="btnOpenTeam">Team</button>' : "";
     slot.innerHTML = `<div class="account-chip"><span class="avatar">${initial}</span>${escapeHtml(auth.user.email)} &middot; ${planBadge(auth.plan)}${teamBtn}${cancelBtn}<button id="btnSignOut">Sign out</button></div>`;
@@ -111,12 +101,6 @@ function renderAccountBar() {
     if (cancelEl) cancelEl.onclick = cancelPlan;
     const teamEl = document.getElementById("btnOpenTeam");
     if (teamEl) teamEl.onclick = openTeamModal;
-=======
-    slot.innerHTML = `<div class="account-chip"><span class="avatar">${initial}</span>${escapeHtml(auth.user.email)} &middot; ${planBadge(auth.plan)}${cancelBtn}<button id="btnSignOut">Sign out</button></div>`;
-    document.getElementById("btnSignOut").onclick = signOut;
-    const cancelEl = document.getElementById("btnCancelPlan");
-    if (cancelEl) cancelEl.onclick = cancelPlan;
->>>>>>> origin/main
   } else {
     slot.innerHTML = `<button class="btn-signin" id="btnOpenAuth">Sign in</button>`;
     document.getElementById("btnOpenAuth").onclick = openAuthModal;
@@ -130,10 +114,7 @@ function openAuthModal() {
     ? ""
     : '<div class="config-note">Accounts aren\u2019t connected yet — this is a preview. Add a free Supabase project URL and key in CONFIG at the top of state.js.</div>';
   document.getElementById("authModalStatus").innerHTML = "";
-<<<<<<< HEAD
   renderAuthTurnstileWidget();
-=======
->>>>>>> origin/main
 }
 function closeAuthModal() {
   document.getElementById("authModal").classList.remove("open");
@@ -153,7 +134,6 @@ async function sendMagicLink() {
       '<div class="status-line warn">Accounts aren\u2019t connected yet.</div>';
     return;
   }
-<<<<<<< HEAD
   if (TURNSTILE_CONFIGURED && !authTurnstileToken) {
     statusEl.innerHTML =
       '<div class="status-line warn">Please complete the verification challenge first.</div>';
@@ -195,11 +175,6 @@ async function sendMagicLink() {
     authTurnstileToken = null;
   }
 
-=======
-  statusEl.innerHTML =
-    '<div class="pw-loader"><span class="ring"></span><span class="msg">Sending link&hellip;</span></div>';
-  const { error } = await supabaseClient.auth.signInWithOtp({ email });
->>>>>>> origin/main
   if (error) {
     statusEl.innerHTML =
       '<div class="status-line warn">' + escapeHtml(error.message) + "</div>";
@@ -213,20 +188,14 @@ async function signOut() {
   if (supabaseClient) await supabaseClient.auth.signOut();
   auth.user = null;
   auth.presets = [];
-<<<<<<< HEAD
   auth.builds = [];
   auth.team = null;
-=======
->>>>>>> origin/main
   auth.plan = "free";
   auth.planExpiresAt = null;
   auth.buildsUsed = 0;
   renderAccountBar();
   renderPresetsBar();
-<<<<<<< HEAD
   renderBuildHistoryBar();
-=======
->>>>>>> origin/main
 }
 
 async function loadProfile() {
@@ -275,20 +244,14 @@ async function initAuth() {
     renderAccountBar();
     return;
   }
-<<<<<<< HEAD
   renderAccountSkeleton();
-=======
->>>>>>> origin/main
   const { data } = await supabaseClient.auth.getSession();
   auth.user = data && data.session ? data.session.user : null;
   if (auth.user) {
     await loadProfile();
     await loadPresets();
-<<<<<<< HEAD
     await loadBuildHistory();
     await loadTeam();
-=======
->>>>>>> origin/main
   }
   renderAccountBar();
   renderPresetsBar();
@@ -297,25 +260,17 @@ async function initAuth() {
     if (auth.user) {
       await loadProfile();
       await loadPresets();
-<<<<<<< HEAD
       await loadBuildHistory();
       await loadTeam();
     } else {
       auth.presets = [];
       auth.builds = [];
       auth.team = null;
-=======
-    } else {
-      auth.presets = [];
->>>>>>> origin/main
       auth.plan = "free";
       auth.planExpiresAt = null;
       auth.buildsUsed = 0;
       renderPresetsBar();
-<<<<<<< HEAD
       renderBuildHistoryBar();
-=======
->>>>>>> origin/main
     }
     renderAccountBar();
   });
@@ -323,13 +278,10 @@ async function initAuth() {
 
 async function loadPresets() {
   if (!supabaseClient || !auth.user) return;
-<<<<<<< HEAD
   const bar = document.getElementById("presetsBar");
   if (bar)
     bar.innerHTML =
       '<div class="skeleton skeleton-bar" aria-hidden="true"></div>';
-=======
->>>>>>> origin/main
   const { data, error } = await supabaseClient
     .from("presets")
     .select("id,name,config,created_at")
@@ -429,7 +381,6 @@ function renderPresetsBar() {
     applyPreset(auth.presets[idx].config);
   };
 }
-<<<<<<< HEAD
 
 /* ============================================================
    Build history — a lightweight, automatic record of recent builds
@@ -656,5 +607,3 @@ async function renderTeamPanel(errorMsg, freshInviteCode) {
     }
   }
 }
-=======
->>>>>>> origin/main

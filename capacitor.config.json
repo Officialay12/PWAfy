@@ -1,5 +1,9 @@
 {
   "appId": "com.ayocodes.pwafy",
   "appName": "PWAfy",
-  "webDir": "."
+  "webDir": "www",
+  "server": {
+    "url": "https://pwafy.pages.dev",
+    "androidScheme": "https"
+  }
 }

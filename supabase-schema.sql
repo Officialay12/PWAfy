@@ -65,6 +65,22 @@ create policy "Users can cancel their own plan"
   using (auth.uid() = id)
   with check (auth.uid() = id and plan = 'free' and plan_expires_at is null);
 
+-- IMPORTANT: RLS policies only gate WHICH ROWS are visible/writable and
+-- what the RESULTING row must look like (WITH CHECK) — they do NOT stop a
+-- single UPDATE from also touching other columns on that same row. Without
+-- the column-level grant below, the policy above (checked only against
+-- plan/plan_expires_at) would let any signed-in user PATCH builds_used or
+-- display_name to anything in the same request that satisfies the check,
+-- e.g. `update({ plan:'free', plan_expires_at:null, builds_used:0 })` from
+-- the browser, silently resetting their free-build credit and completely
+-- defeating consume_build_credit(). This restricts direct table UPDATEs
+-- from the authenticated role to plan/plan_expires_at only. builds_used
+-- and display_name then become genuinely unwritable except through the
+-- SECURITY DEFINER functions below (consume_build_credit, set_display_name),
+-- which run as the function owner and are unaffected by this grant.
+revoke update on public.profiles from authenticated;
+grant update (plan, plan_expires_at) on public.profiles to authenticated;
+
 -- No insert policy for regular users on purpose: the profile row is
 -- created by the trigger below.
 

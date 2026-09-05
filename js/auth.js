@@ -459,8 +459,40 @@ async function saveCurrentAsPreset() {
   await loadPresets();
 }
 
+// A preset's config can come from someone else's data (an Agency-plan
+// teammate's shared preset, see the "team presets" policy in
+// supabase-schema.sql, or a signed-in user's own past build). It's
+// server-validated in shape before it's stored (validate_preset_config()),
+// but that only bounds what's IN the object, not how it's applied here.
+// Object.assign(state, cfg) would copy a "__proto__" key in cfg via a
+// plain property assignment, which resolves through Object.prototype's
+// built-in accessor and reassigns state's own prototype, a classic
+// prototype-pollution shape. Copying only the known, expected keys (and
+// only when they're the right primitive type) closes that off entirely,
+// same allowlist the server-side trigger already validates against.
+const PRESET_CONFIG_KEYS = {
+  name: "string",
+  shortName: "string",
+  description: "string",
+  startUrl: "string",
+  themeColor: "string",
+  bgColor: "string",
+  display: "string",
+  orientation: "string",
+  strategy: "string",
+  includeSplash: "boolean",
+  includeFavicon: "boolean",
+};
 function applyPreset(cfg) {
-  Object.assign(state, cfg);
+  if (!cfg || typeof cfg !== "object") return;
+  for (const [key, type] of Object.entries(PRESET_CONFIG_KEYS)) {
+    if (
+      Object.prototype.hasOwnProperty.call(cfg, key) &&
+      typeof cfg[key] === type
+    ) {
+      state[key] = cfg[key];
+    }
+  }
   renderAll();
 }
 

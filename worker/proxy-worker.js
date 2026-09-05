@@ -64,7 +64,7 @@ function corsHeaders(request, env) {
     .filter(Boolean);
   const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Content-Type": "application/json; charset=utf-8",
     Vary: "Origin",
   };
@@ -194,10 +194,58 @@ async function verifyTurnstile(token, env, remoteip) {
 // Refuse to fetch internal/loopback/link-local addresses so this proxy can't
 // be used to probe the Worker's own private network (basic SSRF guard).
 // Shared by both the scan endpoint and the deploy-verification endpoint.
+//
+// This blocklist approach is inherently imperfect (allowlisting resolved IPs
+// would be stronger, but Workers' fetch() doesn't expose the resolved
+// address before connecting), so it's kept deliberately broad:
+//  - all of RFC1918 (10/8, 172.16/12, 192.168/16), not just 10. and 192.168.
+//  - loopback (127/8, ::1), link-local (169.254/16, fe80::/10), and
+//    IPv4-mapped/compatible IPv6 (::ffff:.../::.../::ffff:0:...)
+//  - unique-local IPv6 (fc00::/7) and the "0.0.0.0"/"0.x" catch-all
+//  - CGNAT (100.64/10), since it's routable on some internal networks
+//  - any hostname that's purely numeric, hex (0x...), or octal (0...), the
+//    classic decimal/hex/octal-IP obfuscation tricks used to smuggle a
+//    loopback/private address past a naive dotted-quad string check
+//    (e.g. "2130706433" or "0x7f000001" both resolve to 127.0.0.1)
 function isBlockedHost(hostname) {
-  const blockedHosts =
-    /^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|::1|\[?::1\]?)/i;
-  return blockedHosts.test(hostname);
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h.endsWith(".localhost") || h === "0") return true;
+  if (/^0x[0-9a-f]+$/i.test(h)) return true; // hex-encoded IP
+  if (/^\d+$/.test(h)) return true; // decimal-encoded IP (whole address as one integer)
+  if (/^0[0-7]+(\.[0-7]+){0,3}$/.test(h)) return true; // octal-encoded IP
+  const ipv4Blocked =
+    /^(127\.|10\.|0\.|169\.254\.|192\.168\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|172\.(1[6-9]|2\d|3[01])\.)/;
+  if (ipv4Blocked.test(h)) return true;
+  const ipv6Blocked =
+    /^(::1$|::$|::ffff:0:|::ffff:|64:ff9b::|fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:)/;
+  if (ipv6Blocked.test(h)) return true;
+  return false;
+}
+
+// fetch() with `redirect:"follow"` (Cloudflare Workers' default) would
+// transparently chase a 3xx to wherever it points, including straight past
+// the isBlockedHost() check above, if a request to an *allowed* host
+// redirects to an internal one, that internal response is what the Worker
+// would end up fetching. This re-validates the Location header against
+// isBlockedHost() before following each hop, capped at a handful of
+// redirects, so the guard above can't be bypassed by an attacker-controlled
+// redirect chain.
+async function safeFetch(url, opts, maxRedirects = 5) {
+  let current = url;
+  for (let i = 0; i <= maxRedirects; i++) {
+    const res = await fetch(current, { ...opts, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      const next = new URL(res.headers.get("location"), current);
+      if (next.protocol !== "https:" && next.protocol !== "http:")
+        throw new Error("Redirected to a disallowed protocol");
+      if (isBlockedHost(next.hostname))
+        throw new Error("Redirected to a disallowed host");
+      current = next.href;
+      continue;
+    }
+    return res;
+  }
+  throw new Error("Too many redirects");
 }
 
 async function handleScan(request, env, cors) {
@@ -266,10 +314,9 @@ async function handleScan(request, env, cors) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(parsed.href, {
+    const res = await safeFetch(parsed.href, {
       signal: controller.signal,
       headers: { "User-Agent": "PWAfy-Scanner/1.0 (+https://ayodeleayo.dev)" },
-      redirect: "follow",
     });
     clearTimeout(timeout);
 
@@ -383,7 +430,7 @@ async function handleVerifyDeploy(request, env, cors) {
   const fetchWithTimeout = (url, opts) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    return fetch(url, { ...opts, signal: controller.signal }).finally(() =>
+    return safeFetch(url, { ...opts, signal: controller.signal }).finally(() =>
       clearTimeout(timeout),
     );
   };
@@ -393,7 +440,6 @@ async function handleVerifyDeploy(request, env, cors) {
   try {
     const pageRes = await fetchWithTimeout(parsed.href, {
       headers: { "User-Agent": "PWAfy-Verifier/1.0 (+https://ayodeleayo.dev)" },
-      redirect: "follow",
     });
     if (pageRes.ok) {
       const reader = pageRes.body.getReader();
@@ -656,6 +702,47 @@ async function handleCreateTransferAccount(request, env, cors) {
   if (typeof user_id !== "string" || !UUID_RE.test(user_id))
     return jsonResponse({ error: "Invalid user id" }, 400, cors);
 
+  // user_id previously came straight from the request body with nothing
+  // checking it belonged to whoever was actually calling, so anyone could
+  // POST any account's UUID here (visible to that account's teammates via
+  // get_team_roster(), for instance) and mint them a virtual account. The
+  // webhook only ever upgrades the plan on a real, amount-matched payment,
+  // so this was never a way to grant a free upgrade, but it's still the
+  // wrong trust boundary: this endpoint should only ever act on behalf of
+  // whoever is actually signed in. Verify the bearer token the client sent
+  // (its own Supabase session, forwarded from the frontend) actually
+  // belongs to user_id before doing anything with it.
+  if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+    const authHeader = request.headers.get("Authorization") || "";
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "");
+    if (!accessToken)
+      return jsonResponse({ error: "Sign in first." }, 401, cors);
+    let callerId = null;
+    try {
+      const whoRes = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
+        headers: {
+          apikey: env.SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + accessToken,
+        },
+      });
+      if (whoRes.ok) {
+        const who = await whoRes.json();
+        callerId = who && who.id;
+      }
+    } catch (e) {
+      /* callerId stays null, falls through to the 403 below */
+    }
+    if (!callerId || callerId !== user_id)
+      return jsonResponse(
+        {
+          error:
+            "You can only generate a transfer account for your own account.",
+        },
+        403,
+        cors,
+      );
+  }
+
   const amount_ngn = PLAN_PRICES_NGN[plan];
 
   // Create (or reuse) a Paystack customer, then a dedicated virtual account
@@ -739,7 +826,18 @@ async function verifyPaystackSignature(request, env, rawBody) {
   const hex = [...new Uint8Array(sig)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  return hex === signature;
+  return timingSafeEqualHex(hex, signature);
+}
+
+// Plain `===` on the hex digest leaks how many leading characters matched
+// through response-time differences, a textbook timing side-channel for a
+// signature check. This always walks the full length of the computed
+// digest regardless of where a mismatch occurs.
+function timingSafeEqualHex(a, b) {
+  if (typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 // Sets (or clears) a profile's plan and expiry. Used both by the webhook

@@ -139,10 +139,20 @@ async function startTransferCheckout(plan) {
   statusEl.innerHTML =
     '<div class="pw-loader"><span class="ring"></span><span class="msg">Generating a one-time account number\u2026</span></div>';
 
+  // The Worker verifies this token actually belongs to user_id before
+  // creating anything (see handleCreateTransferAccount), so this request
+  // can no longer be replayed with someone else's account id.
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const accessToken =
+    sessionData && sessionData.session && sessionData.session.access_token;
+
   try {
     const res = await fetch(CONFIG.PROXY_URL + "/create-transfer-account", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}),
+      },
       body: JSON.stringify({
         plan,
         amount_ngn: planAmountNgn(plan),

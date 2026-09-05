@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Officialay12/PWAfy#readme",
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
     "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.1"
   }

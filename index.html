@@ -7,7 +7,6 @@
   <title>PWAfy — turn any site into an installable app</title>
   <meta name="description"
     content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker plus a quality score so you know it's right." />
-<<<<<<< HEAD
   <link rel="canonical" href="https://pwa.ayocodes-pwafy.workers.dev/" />
 
   <!-- Favicons -->
@@ -81,14 +80,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-=======
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
->>>>>>> origin/main
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://js.paystack.co/v1/inline.js" defer></script>
@@ -120,21 +112,14 @@
   <div class="modal-overlay" id="authModal">
     <div class="modal-box">
       <h3>Sign in to save presets</h3>
-<<<<<<< HEAD
       <p>We'll email you a one-time link, no password to remember. Presets sync to your account so you can reuse a
-=======
-      <p>We'll email you a one-time link no password to remember. Presets sync to your account so you can reuse a
->>>>>>> origin/main
         brand across builds.</p>
       <div id="authModalConfigNote"></div>
       <div class="field">
         <label for="authEmail">Email</label>
         <input type="text" id="authEmail" placeholder="you@example.com">
       </div>
-<<<<<<< HEAD
       <div id="authTurnstileWidget"></div>
-=======
->>>>>>> origin/main
       <div id="authModalStatus"></div>
       <div class="generate-btn-row">
         <button class="btn-primary" id="btnSendLink" style="flex:1;">Send sign-in link</button>
@@ -156,7 +141,6 @@
     </div>
   </div>
 
-<<<<<<< HEAD
   <!-- Team modal (Agency plan) -->
   <div class="modal-overlay" id="teamModal">
     <div class="modal-box">
@@ -168,8 +152,6 @@
     </div>
   </div>
 
-=======
->>>>>>> origin/main
   <header class="hero">
     <div>
       <p class="hero-kicker"><span class="swatch"></span>manifest.json &middot; icons &middot; splash &middot;
@@ -185,11 +167,7 @@
       <p class="hero-note">No account needed for a single build. Everything runs in your browser.</p>
     </div>
     <div class="hero-panel crop">
-<<<<<<< HEAD
       <span class="tag">Generated output</span>
-=======
-      <div class="filebar"><span></span><span></span><span></span></div>
->>>>>>> origin/main
       <div><span class="c">// manifest.json</span></div>
       <div>&#123;</div>
       <div>&nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Northwind Coffee"</span>,</div>
@@ -197,13 +175,8 @@
       <div>&nbsp;&nbsp;<span class="k">"theme_color"</span>: <span class="s">"#1E6E4C"</span>,</div>
       <div>&nbsp;&nbsp;<span class="k">"icons"</span>: [ <span class="c">8 sizes + maskable</span> ]</div>
       <div>&#125;</div>
-<<<<<<< HEAD
       <div style="margin-top:10px;"><span class="c">// sw.js: stale-while-revalidate, verified</span></div>
       <div><span class="c">// quality score: 96/100</span></div>
-=======
-      <div style="margin-top:10px;"><span class="c">// sw.js — stale-while-revalidate &#10003;</span></div>
-      <div><span class="c">// quality score — 96/100</span></div>
->>>>>>> origin/main
     </div>
   </header>
 
@@ -233,7 +206,6 @@
         promise that safely. What it does do is generate every file a browser needs to treat your site as an installable
         app, correctly and to spec, then check its own work.</p>
     </div>
-<<<<<<< HEAD
     <div class="spec-list">
       <div class="spec-row">
         <div class="num">01</div>
@@ -258,23 +230,6 @@
           <div class="sd">Every build is checked against the same criteria installability engines use, with a
             plain-language fix list for anything that's missing.</div>
         </div>
-=======
-    <div class="choice-grid" style="margin-bottom:70px;">
-      <div class="choice-card" style="cursor:default;">
-        <div class="ct">Identity files</div>
-        <div class="cd">A manifest.json validated against the W3C spec, plus the head tags and iOS-specific meta tags
-          most converters forget.</div>
-      </div>
-      <div class="choice-card" style="cursor:default;">
-        <div class="ct">A full icon set</div>
-        <div class="cd">One image in, eight sizes out, properly padded maskable versions, favicon.ico, and the exact iOS
-          splash screens Apple's engine expects.</div>
-      </div>
-      <div class="choice-card" style="cursor:default;">
-        <div class="ct">A quality score</div>
-        <div class="cd">Every build is checked against the same criteria installability engines use, with a
-          plain-language fix list for anything that's missing.</div>
->>>>>>> origin/main
       </div>
     </div>
   </section>
@@ -295,7 +250,6 @@
       </div>
 
       <div class="preview-col">
-<<<<<<< HEAD
         <div class="device-toggle" id="deviceToggle"></div>
 
         <div class="phone-shell" id="phoneShell">
@@ -354,32 +308,6 @@
 
         <div class="filecard">
           <h4>Output: what's in the zip</h4>
-=======
-        <div class="phone-shell">
-          <div class="phone-screen" id="phoneScreen">
-            <div class="phone-notch"></div>
-            <img class="phone-app-icon" id="phoneIcon" src="" alt="" style="display:none;">
-            <div class="phone-app-name" id="phoneName">Your app</div>
-            <div class="phone-splash" id="phoneSplash" style="display:none;"></div>
-            <div class="install-banner" id="installBanner" style="display:none;">
-              <img id="ibIcon" src="" alt="">
-              <div>
-                <div class="ib-name" id="ibName">Your app</div>
-                <div class="ib-sub">Add to Home screen</div>
-              </div>
-              <button>Install</button>
-            </div>
-          </div>
-        </div>
-        <div class="phone-toggle" id="previewToggle">
-          <button class="active" data-view="home">Home screen</button>
-          <button data-view="splash">Splash</button>
-          <button data-view="install">Install prompt</button>
-        </div>
-
-        <div class="filecard">
-          <h4>Output — what's in the zip</h4>
->>>>>>> origin/main
           <div id="fileList"></div>
         </div>
       </div>
@@ -451,27 +379,12 @@
   </section>
 
   <footer>
-<<<<<<< HEAD
     <div>PWAfy &mdash; every file generated in your browser. Built by <a href="https://ayocodes-portfolio.vercel.app/"
         target="_blank" rel="noopener">ayocodes</a>.</div>
     <div>manifest &middot; icons &middot; splash &middot; service-worker</div>
     <div style="margin-top:8px;font-size:12px;">
       <a href="/terms.html">Terms of Service</a> &middot; <a href="/privacy.html">Privacy Policy</a>
     </div>
-  </footer>
-
-  <script src="state.js" defer></script>
-  <script src="generator.js" defer></script>
-  <script src="score.js" defer></script>
-  <script src="preview.js" defer></script>
-  <script src="auth.js" defer></script>
-  <script src="payments.js" defer></script>
-  <script src="wizard.js" defer></script>
-  <script src="app.js" defer></script>
-=======
-    <div>PWAfy &mdash; every file generated in your browser. Built by <a href="https://ayocodes-portfolio.vercel.app/" target="_blank"
-        rel="noopener">ayocodes</a>.</div>
-    <div>manifest &middot; icons &middot; splash &middot; service-worker</div>
   </footer>
 
   <script src="js/state.js" defer></script>
@@ -482,7 +395,6 @@
   <script src="js/payments.js" defer></script>
   <script src="js/wizard.js" defer></script>
   <script src="js/app.js" defer></script>
->>>>>>> origin/main
 </body>
 
 </html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page not found — PWAfy</title>
+    <meta name="description" content="This page doesn't exist. Head back to PWAfy to build your installable app.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .notfound {
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 64px 24px;
+        }
+
+        .notfound .code {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            color: var(--theme, #1E6E4C);
+            margin-bottom: 18px;
+            letter-spacing: 0.02em;
+        }
+
+        .notfound h1 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 34px;
+            margin-bottom: 14px;
+            line-height: 1.2;
+        }
+
+        .notfound p {
+            font-size: 15px;
+            color: var(--ink-faint, #666);
+            line-height: 1.7;
+            margin-bottom: 28px;
+            max-width: 480px;
+        }
+
+        .notfound .links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .notfound .links a {
+            display: inline-block;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <a class="wordmark" href="/" style="text-decoration:none;"><span class="dot"></span>PWAfy<span
+                class="by-line">by ayocodes</span></a>
+    </nav>
+
+    <main class="notfound">
+        <div class="code">404 / manifest not found for this route</div>
+        <h1>That page isn't part of this build.</h1>
+        <p>The link you followed doesn't match anything PWAfy serves. The builder, pricing, and legal pages all live off
+            the homepage below.</p>
+        <div class="links">
+            <a class="btn-primary" href="/">Back to PWAfy</a>
+            <a class="btn-ghost" href="/#tool">Open the builder</a>
+        </div>
+    </main>
+
+    <footer>
+        <div>PWAfy &mdash; every file generated in your browser. Built by <a
+                href="https://ayocodes-portfolio.vercel.app/" target="_blank" rel="noopener">ayocodes</a>.</div>
+        <div style="margin-top:8px;font-size:12px;">
+            <a href="/terms.html">Terms of Service</a> &middot; <a href="/privacy.html">Privacy Policy</a>
+        </div>
+    </footer>
+</body>
+
+</html>

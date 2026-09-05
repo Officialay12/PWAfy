@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PWAfy — turn any site into an installable app</title>
+  <meta name="description"
+    content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker plus a quality score so you know it's right." />
+  <link rel="canonical" href="https://pwa.ayocodes-pwafy.workers.dev/" />
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <meta name="theme-color" content="#1E6E4C">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PWAfy">
+  <meta property="og:title" content="PWAfy — turn any site into an installable app">
+  <meta property="og:description"
+    content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker plus a quality score so you know it's right.">
+  <meta property="og:image" content="https://pwa.ayocodes-pwafy.workers.dev/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://pwa.ayocodes-pwafy.workers.dev/">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PWAfy — turn any site into an installable app">
+  <meta name="twitter:description"
+    content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, icons, splash screens, and a service worker plus a quality score.">
+  <meta name="twitter:image" content="https://pwa.ayocodes-pwafy.workers.dev/og-image.png">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PWAfy",
+    "url": "https://pwa.ayocodes-pwafy.workers.dev/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any (runs in browser)",
+    "description": "Turns any website into an installable Progressive Web App by generating a spec-correct manifest, icon set, iOS splash screens, and a service worker, with an installability quality score.",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free",
+        "price": "0",
+        "priceCurrency": "NGN"
+      },
+      {
+        "@type": "Offer",
+        "name": "Studio",
+        "price": "4000",
+        "priceCurrency": "NGN"
+      },
+      {
+        "@type": "Offer",
+        "name": "Agency",
+        "price": "12000",
+        "priceCurrency": "NGN"
+      }
+    ],
+    "author": {
+      "@type": "Person",
+      "name": "ayocodes",
+      "url": "https://ayocodes-portfolio.vercel.app/"
+    }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://js.paystack.co/v1/inline.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
+</head>
+
+<body>
+
+  <!-- Boot preloader: custom, brand-flavored, not a generic spinner -->
+  <div id="bootPreloader">
+    <div class="boot-mark"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp;PWAfy</div>
+    <div class="boot-line" id="bootLine">warming up the generator&hellip;</div>
+    <div class="boot-track">
+      <div class="boot-fill" id="bootFill"></div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="wordmark"><span class="dot"></span>PWAfy<span class="by-line">by ayocodes</span></div>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark mode"
+        aria-label="Toggle dark mode">&#9789;</button>
+      <div class="account-slot" id="accountSlot"></div>
+      <button class="nav-cta" id="btnOpenTool">Open the builder</button>
+    </div>
+  </nav>
+
+  <!-- Auth modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+      <h3>Sign in to save presets</h3>
+      <p>We'll email you a one-time link, no password to remember. Presets sync to your account so you can reuse a
+        brand across builds.</p>
+      <div id="authModalConfigNote"></div>
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input type="text" id="authEmail" placeholder="you@example.com">
+      </div>
+      <div id="authTurnstileWidget"></div>
+      <div id="authModalStatus"></div>
+      <div class="generate-btn-row">
+        <button class="btn-primary" id="btnSendLink" style="flex:1;">Send sign-in link</button>
+      </div>
+      <button class="modal-close" id="btnCloseAuth">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Pay with transfer modal -->
+  <div class="modal-overlay" id="transferModal">
+    <div class="modal-box">
+      <h3>Pay with bank transfer</h3>
+      <p>We'll generate a one-time account number for this exact amount. Transfer from any Nigerian bank app your plan
+        activates automatically once it lands, usually within a minute.</p>
+      <div id="transferModalConfigNote"></div>
+      <div id="transferDetails"></div>
+      <div id="transferStatus"></div>
+      <button class="modal-close" id="btnCloseTransfer">Close</button>
+    </div>
+  </div>
+
+  <!-- Team modal (Agency plan) -->
+  <div class="modal-overlay" id="teamModal">
+    <div class="modal-box">
+      <h3>Your team</h3>
+      <p>Agency plans can share saved brand presets across a small team. Create a team, then invite teammates with a
+        single-use code.</p>
+      <div id="teamPanelBody"></div>
+      <button class="modal-close" id="btnCloseTeam">Close</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="hero-kicker"><span class="swatch"></span>manifest.json &middot; icons &middot; splash &middot;
+        service-worker.js</p>
+      <h1 class="hero-title">Turn any site into an installable app in one pass.</h1>
+      <p class="hero-sub">Paste a URL or fill in the details yourself. PWAfy generates a complete, spec-correct
+        manifest, a full icon set with iOS splash screens, and a working service worker then scores it so you know it
+        actually works.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="btnHeroStart">Build my PWA</button>
+        <button class="btn-ghost" id="btnHeroHow">See how it works</button>
+      </div>
+      <p class="hero-note">No account needed for a single build. Everything runs in your browser.</p>
+    </div>
+    <div class="hero-panel crop">
+      <span class="tag">Generated output</span>
+      <div><span class="c">// manifest.json</span></div>
+      <div>&#123;</div>
+      <div>&nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Northwind Coffee"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="k">"display"</span>: <span class="s">"standalone"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="k">"theme_color"</span>: <span class="s">"#1E6E4C"</span>,</div>
+      <div>&nbsp;&nbsp;<span class="k">"icons"</span>: [ <span class="c">8 sizes + maskable</span> ]</div>
+      <div>&#125;</div>
+      <div style="margin-top:10px;"><span class="c">// sw.js: stale-while-revalidate, verified</span></div>
+      <div><span class="c">// quality score: 96/100</span></div>
+    </div>
+  </header>
+
+  <div class="stat-row">
+    <div class="stat">
+      <div class="num">8</div>
+      <div class="lbl">icon sizes generated, incl. maskable</div>
+    </div>
+    <div class="stat">
+      <div class="num">6</div>
+      <div class="lbl">iOS splash screens, per device</div>
+    </div>
+    <div class="stat">
+      <div class="num">3</div>
+      <div class="lbl">caching strategies to choose from</div>
+    </div>
+    <div class="stat">
+      <div class="num">0</div>
+      <div class="lbl">files uploaded to a server</div>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="section-head">
+      <h2>What one click actually produces</h2>
+      <p>PWAfy is honest about what a browser can and can't do for you. It won't rehost your website no tool can
+        promise that safely. What it does do is generate every file a browser needs to treat your site as an installable
+        app, correctly and to spec, then check its own work.</p>
+    </div>
+    <div class="spec-list">
+      <div class="spec-row">
+        <div class="num">01</div>
+        <div>
+          <div class="st">Identity files</div>
+          <div class="sd">A manifest.json validated against the W3C spec, plus the head tags and iOS-specific meta tags
+            most converters forget.</div>
+        </div>
+      </div>
+      <div class="spec-row">
+        <div class="num">02</div>
+        <div>
+          <div class="st">A full icon set</div>
+          <div class="sd">One image in, eight sizes out, properly padded maskable versions, favicon.ico, and the exact
+            iOS splash screens Apple's engine expects.</div>
+        </div>
+      </div>
+      <div class="spec-row">
+        <div class="num">03</div>
+        <div>
+          <div class="st">A quality score</div>
+          <div class="sd">Every build is checked against the same criteria installability engines use, with a
+            plain-language fix list for anything that's missing.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tool">
+    <div class="section-head">
+      <h2>Build it now</h2>
+      <p>Five steps. Scan a live URL to pre-fill everything, or start from a blank form either way you end up with the
+        same accurate output.</p>
+    </div>
+
+    <div id="errBox"></div>
+
+    <div class="tool-grid">
+      <div class="wizard crop">
+        <div class="steps-nav" id="stepsNav"></div>
+        <div class="step-body" id="stepBody"></div>
+      </div>
+
+      <div class="preview-col">
+        <div class="device-toggle" id="deviceToggle"></div>
+
+        <div class="phone-shell" id="phoneShell">
+          <div class="phone-screen" id="phoneScreen">
+            <div class="phone-statusbar">
+              <span class="ps-time">9:41</span>
+              <span class="ps-icons">&#128246; &#128246; &#128267;</span>
+            </div>
+            <div class="phone-notch"></div>
+            <img class="phone-app-icon" id="phoneIcon" src="" alt="Preview of your app's home screen icon"
+              style="display:none;">
+            <div class="phone-app-name" id="phoneName">Your app</div>
+            <div class="phone-splash" id="phoneSplash" style="display:none;"></div>
+            <div class="phone-app-open" id="phoneAppOpen" style="display:none;">
+              <div class="app-open-header" id="appOpenHeader"></div>
+              <div class="app-open-body" id="appOpenBody"></div>
+            </div>
+            <div class="install-banner" id="installBanner" style="display:none;">
+              <img id="ibIcon" src="" alt="Your app's icon as it appears in the install prompt">
+              <div>
+                <div class="ib-name" id="ibName">Your app</div>
+                <div class="ib-sub" id="ibSub">Add to Home screen</div>
+              </div>
+              <button id="ibBtn">Install</button>
+            </div>
+            <div class="ios-share-sheet" id="iosShareSheet" style="display:none;">
+              <div class="share-sheet-handle"></div>
+              <div class="share-sheet-row highlight">
+                <span class="share-icon">&#8679;</span>
+                <span>Add to Home Screen</span>
+              </div>
+              <div class="share-sheet-row"><span class="share-icon">&#128279;</span><span>Copy</span></div>
+              <div class="share-sheet-row"><span class="share-icon">&#9993;</span><span>Mail</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="desktop-shell" id="desktopShell" style="display:none;">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-address-bar">
+              <span class="addr-lock">&#128274;</span>
+              <span class="addr-text" id="desktopAddr">yoursite.com</span>
+              <span class="install-icon-desktop" id="desktopInstallIcon" title="Install this app">&#8853;</span>
+            </div>
+          </div>
+          <div class="browser-content" id="desktopContent"></div>
+          <div class="desktop-taskbar" id="desktopTaskbar" style="display:none;">
+            <img id="desktopTaskbarIcon" src="" alt="Your app's icon pinned to the taskbar">
+            <span id="desktopTaskbarName">Your app</span>
+          </div>
+        </div>
+
+        <div class="phone-toggle" id="previewToggle"></div>
+        <div class="phone-toggle" id="platformToggle" style="display:none;"></div>
+
+        <div class="filecard">
+          <h4>Output: what's in the zip</h4>
+          <div id="fileList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" style="margin-top:96px;">
+    <div class="section-head">
+      <h2>Pricing</h2>
+      <p>Build one PWA for free. Pay when this becomes something you rely on. Choose the currency and payment method
+        that works for you cards from anywhere are accepted, and Nigerian users can pay by direct bank transfer.</p>
+    </div>
+    <div class="currency-select-row">
+      <label for="currencySelect">Show prices in</label>
+      <select id="currencySelect">
+        <option value="NGN">NGN &mdash; Naira</option>
+        <option value="USD">USD &mdash; US Dollar</option>
+        <option value="GBP">GBP &mdash; British Pound</option>
+        <option value="EUR">EUR &mdash; Euro</option>
+        <option value="GHS">GHS &mdash; Cedi</option>
+        <option value="KES">KES &mdash; Shilling</option>
+        <option value="ZAR">ZAR &mdash; Rand</option>
+      </select>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="pname">Free</div>
+        <div class="pcost">0</div>
+        <div class="pperiod">one build, watermark-free</div>
+        <ul>
+          <li>Full manifest + icon set</li>
+          <li>1 caching strategy at a time</li>
+          <li>1 saved preset</li>
+          <li>Quality score</li>
+        </ul>
+        <button class="btn-ghost" id="btnStartFree">Start building</button>
+      </div>
+      <div class="price-card feat">
+        <div class="pname">Studio</div>
+        <div class="pcost" id="studioPrice">&#8358;4,000</div>
+        <div class="pperiod" id="studioPeriod">per month &middot; unlimited builds</div>
+        <ul>
+          <li>Unlimited projects &amp; re-generation</li>
+          <li>Unlimited saved brand presets</li>
+          <li>All caching strategies + iOS splash set</li>
+          <li>Priority icon processing</li>
+        </ul>
+        <button class="btn-primary" id="btnUpgradeStudio">Upgrade to Studio</button>
+        <button class="btn-ghost" id="btnTransferStudio" style="margin-top:8px;">Pay with bank transfer</button>
+      </div>
+      <div class="price-card">
+        <div class="pname">Agency</div>
+        <div class="pcost" id="agencyPrice">&#8358;12,000</div>
+        <div class="pperiod" id="agencyPeriod">per month &middot; for client work</div>
+        <ul>
+          <li>Everything in Studio</li>
+          <li>White-labelled output</li>
+          <li>Client handoff docs included</li>
+          <li>Team seats</li>
+        </ul>
+        <button class="btn-ghost" id="btnUpgradeAgency">Upgrade to Agency</button>
+        <button class="btn-ghost" id="btnTransferAgency" style="margin-top:8px;">Pay with bank transfer</button>
+      </div>
+    </div>
+    <div id="pricingStatus" style="margin-top:16px;"></div>
+    <p style="font-size:12px;color:var(--ink-faint);margin-top:18px;">Card charges settle in naira; the amount shown in
+      another currency is an approximate guide your bank applies its own exchange rate. Bank transfer is only
+      available in naira.</p>
+  </section>
+
+  <footer>
+    <div>PWAfy &mdash; every file generated in your browser. Built by <a href="https://ayocodes-portfolio.vercel.app/"
+        target="_blank" rel="noopener">ayocodes</a>.</div>
+    <div>manifest &middot; icons &middot; splash &middot; service-worker</div>
+    <div style="margin-top:8px;font-size:12px;">
+      <a href="/terms.html">Terms of Service</a> &middot; <a href="/privacy.html">Privacy Policy</a>
+    </div>
+  </footer>
+
+  <script src="state.js" defer></script>
+  <script src="generator.js" defer></script>
+  <script src="score.js" defer></script>
+  <script src="preview.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="payments.js" defer></script>
+  <script src="wizard.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,12 @@
+# Secrets — never commit these
+.dev.vars
+.env
+.env.local
+
+# Wrangler / Cloudflare local state
+.wrangler/
+node_modules/
+
+# Editor / OS noise
+.DS_Store
+*.log

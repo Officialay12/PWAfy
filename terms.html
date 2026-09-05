@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terms of Service — PWAfy</title>
+    <meta name="description"
+        content="The terms that govern using PWAfy, including how billing, refunds, and generated files work.">
+    <link rel="canonical" href="https://pwa.ayocodes-pwafy.workers.dev/terms.html" />
+    <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .legal-doc {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 24px 96px;
+            line-height: 1.7;
+        }
+
+        .legal-doc h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .legal-doc .updated {
+            color: var(--ink-faint, #666);
+            font-size: 13px;
+            margin-bottom: 40px;
+        }
+
+        .legal-doc h2 {
+            font-size: 18px;
+            margin-top: 36px;
+            margin-bottom: 10px;
+        }
+
+        .legal-doc p,
+        .legal-doc li {
+            font-size: 15px;
+            color: var(--ink, #141C18);
+        }
+
+        .legal-doc ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .legal-doc a {
+            color: var(--theme, #1E6E4C);
+        }
+
+        .breadcrumb {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 24px 0;
+            font-size: 13px;
+            color: var(--ink-faint, #666);
+        }
+
+        .breadcrumb a {
+            color: var(--theme, #1E6E4C);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "PWAfy", "item": "https://pwa.ayocodes-pwafy.workers.dev/" },
+      { "@type": "ListItem", "position": 2, "name": "Terms of Service", "item": "https://pwa.ayocodes-pwafy.workers.dev/terms.html" }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+    <nav class="nav">
+        <a class="wordmark" href="/" style="text-decoration:none;"><span class="dot"></span>PWAfy<span
+                class="by-line">by ayocodes</span></a>
+    </nav>
+
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">PWAfy</a> / <span aria-current="page">Terms of Service</span>
+    </nav>
+
+    <main class="legal-doc">
+        <h1>Terms of Service</h1>
+        <p class="updated">Last updated September 3, 2026</p>
+
+        <p>These terms govern your use of PWAfy, a browser-based tool that generates Progressive Web App files (a
+            manifest, icon set, splash screens, and a service worker) from a website you provide. By using PWAfy, you
+            agree to the terms below.</p>
+
+        <h2>1. What PWAfy does and doesn't do</h2>
+        <p>PWAfy generates PWA-related files client-side, in your browser. It does not host, mirror, or rehost your
+            website, and it does not modify your live site. You're responsible for copying the generated files onto your
+            own server or hosting provider.</p>
+        <p>The optional "scan a URL" feature fetches the public HTML of a page you provide to pre-fill the builder. This
+            request is proxied through our server so we can read response headers your browser otherwise couldn't; we do
+            not store the fetched page content beyond a short cache used to speed up repeat scans of the same URL.</p>
+
+        <h2>2. Accounts</h2>
+        <p>Creating an account is optional and only required to save brand presets or unlock a paid plan. We use
+            passwordless sign-in (a one-time email link). We never store a password for your account.</p>
+
+        <h2>3. Plans and billing</h2>
+        <p>The Free plan allows one build per account or browser session. Studio and Agency are paid monthly
+            subscriptions, billed in Nigerian naira (NGN), payable by card or direct bank transfer. Card and transfer
+            payments are processed by Paystack; we do not receive or store your card details.</p>
+        <p>Subscriptions do not renew automatically via saved card details unless you explicitly re-subscribe; each plan
+            period runs for 30 days from a successful payment. You can cancel a paid plan at any time from your account
+            menu, which returns you to the Free plan immediately. No partial refund is issued for the remaining days of
+            the current period.</p>
+        <p>If you believe you were charged in error, contact us with your account email and payment reference and we'll
+            investigate.</p>
+
+        <h2>4. Acceptable use</h2>
+        <p>Don't use the URL-scan feature to probe, scrape, or attack systems you don't have permission to access. Don't
+            attempt to circumvent rate limits, plan restrictions, or authentication. We may suspend accounts that abuse
+            the service.</p>
+
+        <h2>5. No warranty</h2>
+        <p>PWAfy is provided as-is. The quality score is a best-effort check against common installability criteria and
+            is not a guarantee that a generated PWA will pass every browser's or app store's requirements. Review the
+            generated files before deploying them to production.</p>
+
+        <h2>6. Changes</h2>
+        <p>We may update these terms as the product changes. Continued use after an update means you accept the revised
+            terms.</p>
+
+        <h2>7. Contact</h2>
+        <p>Questions about these terms can be sent via the contact details on <a
+                href="https://ayocodes-portfolio.vercel.app/" target="_blank" rel="noopener">ayocodes' portfolio
+                site</a>.</p>
+    </main>
+
+    <footer>
+        <div>PWAfy &mdash; every file generated in your browser. Built by <a
+                href="https://ayocodes-portfolio.vercel.app/" target="_blank" rel="noopener">ayocodes</a>.</div>
+    </footer>
+</body>
+
+</html>

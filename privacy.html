@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy — PWAfy</title>
+    <meta name="description"
+        content="How PWAfy handles your data: what we collect, which third parties we use (Supabase, Paystack, Cloudflare), and what stays entirely in your browser.">
+    <link rel="canonical" href="https://pwa.ayocodes-pwafy.workers.dev/privacy.html" />
+    <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .legal-doc {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 24px 96px;
+            line-height: 1.7;
+        }
+
+        .legal-doc h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .legal-doc .updated {
+            color: var(--ink-faint, #666);
+            font-size: 13px;
+            margin-bottom: 40px;
+        }
+
+        .legal-doc h2 {
+            font-size: 18px;
+            margin-top: 36px;
+            margin-bottom: 10px;
+        }
+
+        .legal-doc p,
+        .legal-doc li {
+            font-size: 15px;
+            color: var(--ink, #141C18);
+        }
+
+        .legal-doc ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .legal-doc a {
+            color: var(--theme, #1E6E4C);
+        }
+
+        .legal-doc table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+
+        .legal-doc th,
+        .legal-doc td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line, #e2e5e0);
+            vertical-align: top;
+        }
+
+        .breadcrumb {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 24px 0;
+            font-size: 13px;
+            color: var(--ink-faint, #666);
+        }
+
+        .breadcrumb a {
+            color: var(--theme, #1E6E4C);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "PWAfy", "item": "https://pwa.ayocodes-pwafy.workers.dev/" },
+      { "@type": "ListItem", "position": 2, "name": "Privacy Policy", "item": "https://pwa.ayocodes-pwafy.workers.dev/privacy.html" }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+    <nav class="nav">
+        <a class="wordmark" href="/" style="text-decoration:none;"><span class="dot"></span>PWAfy<span
+                class="by-line">by ayocodes</span></a>
+    </nav>
+
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">PWAfy</a> / <span aria-current="page">Privacy Policy</span>
+    </nav>
+
+    <main class="legal-doc">
+        <h1>Privacy Policy</h1>
+        <p class="updated">Last updated September 3, 2026</p>
+
+        <p>This page explains what PWAfy collects, why, and who it's shared with. The short version: the actual PWA
+            generation (manifest, icons, splash screens, service worker) happens entirely in your browser and is never
+            uploaded anywhere. The only data we handle is what's needed to run optional accounts and payments.</p>
+
+        <h2>1. Data that never leaves your browser</h2>
+        <p>The icon you upload, the generated manifest, service worker, splash screens, and ZIP file are produced
+            on-device using the Canvas API and never transmitted to our server or any third party. If you never create
+            an account or pay for a plan, PWAfy collects nothing about you at all.</p>
+
+        <h2>2. Data we collect and why</h2>
+        <table>
+            <tr>
+                <th>Data</th>
+                <th>When</th>
+                <th>Why</th>
+            </tr>
+            <tr>
+                <td>Email address</td>
+                <td>You sign in</td>
+                <td>Passwordless (magic-link) authentication, via Supabase Auth</td>
+            </tr>
+            <tr>
+                <td>Saved preset config (app name, colors, description, etc.)</td>
+                <td>You save a preset</td>
+                <td>So you can reuse a brand across builds</td>
+            </tr>
+            <tr>
+                <td>Plan status &amp; build count</td>
+                <td>You use a paid plan / generate a build</td>
+                <td>Enforcing plan limits and entitlements</td>
+            </tr>
+            <tr>
+                <td>IP address</td>
+                <td>Every request to our Worker</td>
+                <td>Rate limiting and abuse prevention only; not linked to your account and not stored beyond the short
+                    windows below</td>
+            </tr>
+            <tr>
+                <td>The URL you scan (if you use "Scan a URL")</td>
+                <td>You use the scan feature</td>
+                <td>Fetched server-side to read its title/description/theme-color/icon; cached briefly to avoid
+                    re-fetching the same URL repeatedly</td>
+            </tr>
+        </table>
+
+        <h2>3. Payments</h2>
+        <p>Card and bank-transfer payments are handled entirely by Paystack. We never receive, see, or store your card
+            number, expiry, or CVV. Paystack's inline checkout runs in its own secured frame. We only receive a payment
+            confirmation (plan, amount, success/failure) via a signed server-to-server webhook, which we verify before
+            activating anything.</p>
+
+        <h2>4. Third parties we use</h2>
+        <ul>
+            <li><strong>Supabase</strong>: authentication and database hosting for accounts, presets, and plan status.
+            </li>
+            <li><strong>Paystack</strong>: payment processing (cards and Nigerian bank transfer).</li>
+            <li><strong>Cloudflare</strong>: hosts the site and our API Worker, and provides Turnstile bot-protection on
+                the URL-scan endpoint.</li>
+            <li><strong>open.er-api.com</strong>: a keyless, free exchange-rate API used only to display approximate
+                prices in other currencies. No personal data is sent to it, only currency codes.</li>
+        </ul>
+        <p>We do not use advertising trackers, ad networks, or third-party analytics/marketing pixels. We don't sell or
+            rent your data to anyone.</p>
+
+        <h2>5. Cookies &amp; local storage</h2>
+        <p>PWAfy uses your browser's local storage, not tracking cookies, for: your dark/light theme choice, your
+            signed-in session token (managed by Supabase's client library), and a cached exchange-rate lookup for the
+            current tab session. None of this is used to track you across other sites.</p>
+
+        <h2>6. How long we keep things</h2>
+        <ul>
+            <li>Rate-limit counters: auto-expire within roughly a minute to an hour.</li>
+            <li>URL-scan cache: auto-expires after 6 hours.</li>
+            <li>Account data (email, presets, plan status): kept until you delete your account or request deletion.</li>
+        </ul>
+
+        <h2>7. Your choices</h2>
+        <p>You can sign out at any time, cancel a paid plan yourself from the account menu (drops you back to Free
+            immediately), and delete individual presets. To request full account deletion, contact us with the email
+            address associated with your account.</p>
+
+        <h2>8. Data location &amp; security</h2>
+        <p>Data is stored with our infrastructure providers (Supabase, Cloudflare), which encrypt data at rest and in
+            transit. Access to your account data is protected by row-level security policies so that, by default, only
+            your own signed-in session can read or write your own rows.</p>
+
+        <h2>9. Children's privacy</h2>
+        <p>PWAfy isn't directed at children and we don't knowingly collect data from anyone under the age required by
+            applicable law to consent to data processing in their jurisdiction.</p>
+
+        <h2>10. Changes to this policy</h2>
+        <p>If this policy changes materially, we'll update the date at the top of this page. Continued use after an
+            update means you accept the revised policy.</p>
+
+        <h2>11. Contact</h2>
+        <p>Questions about this policy, or a data-deletion request, can be sent via the contact details on <a
+                href="https://ayocodes-portfolio.vercel.app/" target="_blank" rel="noopener">ayocodes' portfolio
+                site</a>.</p>
+    </main>
+
+    <footer>
+        <div>PWAfy &mdash; every file generated in your browser. Built by <a
+                href="https://ayocodes-portfolio.vercel.app/" target="_blank" rel="noopener">ayocodes</a>.</div>
+    </footer>
+</body>
+
+</html>

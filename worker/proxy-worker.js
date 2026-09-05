@@ -41,6 +41,7 @@ const FETCH_TIMEOUT_MS = 8000;
 const MAX_HTML_BYTES = 2_000_000; // 2MB cap so a huge page can't tie up the worker
 const SCAN_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6 hours — cuts repeat-scan load a lot
 const RATE_LIMIT_PER_MINUTE = 12; // per client IP, on the scan endpoint only
+<<<<<<< HEAD
 const TRANSFER_RATE_LIMIT_PER_HOUR = 6; // per client IP, on account-creation only
 const MAGIC_LINK_RATE_LIMIT_PER_HOUR = 5; // per client IP, on sign-in requests
 const PLAN_DURATION_DAYS = 30; // how long a paid plan lasts after a successful charge
@@ -58,6 +59,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+=======
+const PLAN_DURATION_DAYS = 30; // how long a paid plan lasts after a successful charge
+
+>>>>>>> origin/main
 /* ============================================================
    CORS
    Only origins listed in env.ALLOWED_ORIGINS (comma-separated) get a
@@ -85,6 +90,7 @@ function corsHeaders(request, env) {
   return headers;
 }
 
+<<<<<<< HEAD
 // Applied to every response this Worker sends. This Worker only ever
 // serves JSON to fetch()/XHR callers (never HTML), so a maximally strict
 // CSP is safe here — there is no page context for it to break.
@@ -102,6 +108,10 @@ function jsonResponse(data, status, cors) {
     status,
     headers: { ...cors, ...SECURITY_HEADERS },
   });
+=======
+function jsonResponse(data, status, cors) {
+  return new Response(JSON.stringify(data), { status, headers: cors });
+>>>>>>> origin/main
 }
 
 /* ============================================================
@@ -156,6 +166,7 @@ function extractMeta(html, baseUrl) {
     });
 }
 
+<<<<<<< HEAD
 // Generic fixed-window limiter. `windowSeconds` also buckets the KV key, so
 // different endpoints (scan: 1-minute windows, transfer: 1-hour windows)
 // don't collide or share a budget.
@@ -173,6 +184,14 @@ async function checkRateLimit(
   await env.RATE_LIMIT.put(key, String(current + 1), {
     expirationTtl: windowSeconds + 30,
   });
+=======
+async function checkRateLimit(env, ip) {
+  if (!env.RATE_LIMIT) return true; // if the KV isn't bound yet, don't block — fail open
+  const key = "rl:" + ip + ":" + Math.floor(Date.now() / 60000);
+  const current = parseInt((await env.RATE_LIMIT.get(key)) || "0", 10);
+  if (current >= RATE_LIMIT_PER_MINUTE) return false;
+  await env.RATE_LIMIT.put(key, String(current + 1), { expirationTtl: 90 });
+>>>>>>> origin/main
   return true;
 }
 
@@ -202,6 +221,7 @@ async function verifyTurnstile(token, env, remoteip) {
   }
 }
 
+<<<<<<< HEAD
 // Refuse to fetch internal/loopback/link-local addresses so this proxy can't
 // be used to probe the Worker's own private network (basic SSRF guard).
 // Shared by both the scan endpoint and the deploy-verification endpoint.
@@ -219,6 +239,11 @@ async function handleScan(request, env, cors) {
     RATE_LIMIT_PER_MINUTE,
     60,
   );
+=======
+async function handleScan(request, env, cors) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const okRate = await checkRateLimit(env, ip);
+>>>>>>> origin/main
   if (!okRate) {
     return jsonResponse(
       {
@@ -264,7 +289,13 @@ async function handleScan(request, env, cors) {
   }
   // Refuse to fetch internal/loopback/link-local addresses so this proxy can't
   // be used to probe the Worker's own private network (basic SSRF guard).
+<<<<<<< HEAD
   if (isBlockedHost(parsed.hostname)) {
+=======
+  const blockedHosts =
+    /^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|::1|\[?::1\]?)/i;
+  if (blockedHosts.test(parsed.hostname)) {
+>>>>>>> origin/main
     return jsonResponse({ error: "That host isn't allowed" }, 400, cors);
   }
 
@@ -338,6 +369,7 @@ function concatChunks(chunks) {
 }
 
 /* ============================================================
+<<<<<<< HEAD
    1c. VERIFY DEPLOY — checks a real, already-deployed site against
    the same installability criteria the quality score estimates
    client-side, but against what's actually live: fetches the real
@@ -603,6 +635,8 @@ async function handleSendMagicLink(request, env, cors) {
 }
 
 /* ============================================================
+=======
+>>>>>>> origin/main
    2. PAY WITH TRANSFER — create a dedicated virtual account
    ============================================================ */
 
@@ -614,6 +648,7 @@ async function handleCreateTransferAccount(request, env, cors) {
       cors,
     );
 
+<<<<<<< HEAD
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   const okRate = await checkRateLimit(
     env,
@@ -629,12 +664,15 @@ async function handleCreateTransferAccount(request, env, cors) {
     );
   }
 
+=======
+>>>>>>> origin/main
   let body;
   try {
     body = await request.json();
   } catch (e) {
     return jsonResponse({ error: "Invalid request body" }, 400, cors);
   }
+<<<<<<< HEAD
   const { plan, user_id, email } = body || {};
   // amount_ngn is intentionally NOT read from the request body — it is
   // always derived from PLAN_PRICES_NGN below, so a tampered client value
@@ -649,6 +687,13 @@ async function handleCreateTransferAccount(request, env, cors) {
     return jsonResponse({ error: "Invalid user id" }, 400, cors);
 
   const amount_ngn = PLAN_PRICES_NGN[plan];
+=======
+  const { plan, amount_ngn, user_id, email } = body;
+  if (!plan || !amount_ngn || !user_id || !email)
+    return jsonResponse({ error: "Missing required fields" }, 400, cors);
+  if (!["studio", "agency"].includes(plan))
+    return jsonResponse({ error: "Unknown plan" }, 400, cors);
+>>>>>>> origin/main
 
   // Create (or reuse) a Paystack customer, then a dedicated virtual account
   // for them. Paystack settles this straight to your account; our webhook
@@ -764,6 +809,7 @@ function planExpiryIso() {
 async function handlePaystackWebhook(request, env) {
   const rawBody = await request.text();
   const validSig = await verifyPaystackSignature(request, env, rawBody);
+<<<<<<< HEAD
   if (!validSig)
     return new Response("invalid signature", {
       status: 401,
@@ -799,10 +845,21 @@ async function handlePaystackWebhook(request, env) {
       data.status === "success" &&
       chargedNgn >= requiredNgn
     ) {
+=======
+  if (!validSig) return new Response("invalid signature", { status: 401 });
+
+  const event = JSON.parse(rawBody);
+
+  // Card checkout success
+  if (event.event === "charge.success") {
+    const meta = event.data.metadata || {};
+    if (meta.user_id && meta.plan) {
+>>>>>>> origin/main
       await updateProfilePlan(env, meta.user_id, meta.plan, planExpiryIso());
     }
   }
 
+<<<<<<< HEAD
   // Bank transfer received into a dedicated virtual account. The plan and
   // expected amount are looked up from what THIS SERVER stored at account
   // -creation time (handleCreateTransferAccount, which derives amount_ngn
@@ -815,28 +872,49 @@ async function handlePaystackWebhook(request, env) {
   ) {
     const customerCode = data.customer && data.customer.customer_code;
     const creditedNgn = Number(data.amount) / 100;
+=======
+  // Bank transfer received into a dedicated virtual account
+  if (
+    event.event === "dedicatedaccount.credit" ||
+    (event.event === "charge.success" &&
+      event.data.channel === "dedicated_nuban")
+  ) {
+    const customerCode =
+      event.data.customer && event.data.customer.customer_code;
+>>>>>>> origin/main
     if (customerCode && env.SCAN_CACHE) {
       const stored = await env.SCAN_CACHE.get(
         "txaccount:" + customerCode,
         "json",
       );
+<<<<<<< HEAD
       if (
         stored &&
         stored.user_id &&
         stored.plan &&
         creditedNgn >= Number(stored.amount_ngn)
       ) {
+=======
+      if (stored)
+>>>>>>> origin/main
         await updateProfilePlan(
           env,
           stored.user_id,
           stored.plan,
           planExpiryIso(),
         );
+<<<<<<< HEAD
       }
     }
   }
 
   return new Response("ok", { status: 200, headers: SECURITY_HEADERS });
+=======
+    }
+  }
+
+  return new Response("ok", { status: 200 });
+>>>>>>> origin/main
 }
 
 /* ============================================================
@@ -876,7 +954,11 @@ export default {
   async fetch(request, env) {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS")
+<<<<<<< HEAD
       return new Response(null, { headers: { ...cors, ...SECURITY_HEADERS } });
+=======
+      return new Response(null, { headers: cors });
+>>>>>>> origin/main
 
     const url = new URL(request.url);
 
@@ -886,12 +968,15 @@ export default {
     ) {
       return handleCreateTransferAccount(request, env, cors);
     }
+<<<<<<< HEAD
     if (url.pathname === "/send-magic-link" && request.method === "POST") {
       return handleSendMagicLink(request, env, cors);
     }
     if (url.pathname === "/verify-deploy" && request.method === "POST") {
       return handleVerifyDeploy(request, env, cors);
     }
+=======
+>>>>>>> origin/main
     if (url.pathname === "/paystack-webhook" && request.method === "POST") {
       // Server-to-server call from Paystack, not a browser — CORS headers
       // don't apply here, so this intentionally doesn't use `cors`.

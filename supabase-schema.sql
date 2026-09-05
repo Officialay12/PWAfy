@@ -187,7 +187,6 @@ drop trigger if exists before_preset_insert on public.presets;
 create trigger before_preset_insert
   before insert on public.presets
   for each row execute procedure public.enforce_preset_limit();
-<<<<<<< HEAD
 
 -- RLS controls WHO can write a preset row, but says nothing about WHAT is
 -- in it. This validates config's shape and size before it's ever written —
@@ -534,5 +533,3 @@ create policy "Users can view their own or team presets"
       where me.user_id = auth.uid() and them.user_id = presets.user_id
     )
   );
-=======
->>>>>>> origin/main

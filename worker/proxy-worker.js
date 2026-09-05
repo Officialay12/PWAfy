@@ -1,42 +1,3 @@
-// PWAfy — backend Worker
-// Deploy this to Cloudflare Workers (free tier: 100,000 requests/day,
-// no cost at PWAfy's scale). Handles four things, all under one Worker
-// so there's only one thing to deploy and one URL to configure:
-//
-//   GET  /?url=...&ts_token=...   -> scan a site (title/description/theme-color/icon)
-//   POST /create-transfer-account  -> generate a Paystack dedicated virtual account
-//   POST /paystack-webhook         -> verify a payment server-side and upgrade the plan
-//   (cron) scheduled               -> downgrade any expired paid plan back to free
-//
-// Required bindings/secrets (all free to create):
-//   - KV namespace bound as SCAN_CACHE   (Workers KV free tier)
-//   - KV namespace bound as RATE_LIMIT   (Workers KV free tier)
-//   - Secret PAYSTACK_SECRET_KEY         (wrangler secret put PAYSTACK_SECRET_KEY)
-//   - Secret SUPABASE_SERVICE_ROLE_KEY   (wrangler secret put SUPABASE_SERVICE_ROLE_KEY)
-//   - Secret TURNSTILE_SECRET_KEY        (wrangler secret put TURNSTILE_SECRET_KEY —
-//                                          optional; scan works without it, just with
-//                                          less abuse protection)
-//   - Var    SUPABASE_URL                (wrangler.toml [vars])
-//   - Var    ALLOWED_ORIGINS             (wrangler.toml [vars] — comma-separated list
-//                                          of browser origins allowed to call this Worker)
-//
-// Deploy steps:
-//   1. npm install -g wrangler
-//   2. wrangler init pwafy-worker   (choose "Hello World Worker", TypeScript: no)
-//   3. wrangler kv:namespace create SCAN_CACHE
-//      wrangler kv:namespace create RATE_LIMIT
-//      -> paste the returned IDs into wrangler.toml under [[kv_namespaces]]
-//   4. wrangler secret put PAYSTACK_SECRET_KEY
-//      wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-//      wrangler secret put TURNSTILE_SECRET_KEY
-//   5. Replace the generated src/index.js with this file's contents
-//   6. wrangler deploy
-//   7. Copy the resulting workers.dev URL into CONFIG.PROXY_URL in js/state.js
-//   8. In your Paystack dashboard, point the webhook URL at
-//      <your-worker-url>/paystack-webhook
-//   9. Set ALLOWED_ORIGINS in wrangler.toml to your real site's origin(s)
-//      before going live — it defaults to localhost only.
-
 const FETCH_TIMEOUT_MS = 8000;
 const MAX_HTML_BYTES = 2_000_000; // 2MB cap so a huge page can't tie up the worker
 const SCAN_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6 hours — cuts repeat-scan load a lot
@@ -69,7 +30,7 @@ const UUID_RE =
 
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
-  const allowList = (env.ALLOWED_ORIGINS || "http://localhost:3000")
+  const allowList = (env.ALLOWED_ORIGINS || "https://pwafy.pages.dev/")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);

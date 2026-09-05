@@ -8,7 +8,12 @@ const PLAN_DURATION_DAYS = 30; // how long a paid plan lasts after a successful 
 const ASSISTANT_RATE_LIMIT_PER_MINUTE = 8; // per client IP, on the PWAfy AI endpoint
 const ASSISTANT_MESSAGE_MAX_CHARS = 800;
 const ASSISTANT_HISTORY_MAX_TURNS = 8;
-const ASSISTANT_MODEL = "llama-3.3-70b-versatile";
+// Groq deprecated llama-3.3-70b-versatile (decommissioned 2026-08-16).
+// openai/gpt-oss-120b is Groq's own recommended replacement and uses the
+// same OpenAI-style chat completions request shape, so nothing else below
+// needs to change. If Groq deprecates this one too, only this line and
+// nothing else should need to change.
+const ASSISTANT_MODEL = "openai/gpt-oss-120b";
 
 // Everything the assistant is allowed to know about PWAfy, kept in sync
 // with the copy on the site itself (index.html / terms.html). Never lets
@@ -966,6 +971,11 @@ async function handleAskAI(request, env, cors) {
       }),
     });
     if (!res.ok) {
+      // Logged (not sent to the client) so `wrangler tail` shows the real
+      // cause, e.g. an expired key or a Groq model deprecation, instead of
+      // this always looking like the same silent generic 502.
+      const errText = await res.text();
+      console.log("Groq error:", res.status, errText);
       return jsonResponse(
         {
           error: "PWAfy AI couldn't process that just now, try again shortly.",
@@ -988,6 +998,7 @@ async function handleAskAI(request, env, cors) {
     }
     return jsonResponse({ reply }, 200, cors);
   } catch (e) {
+    console.log("Groq fetch threw:", e.message || String(e));
     return jsonResponse(
       { error: "Couldn't reach PWAfy AI right now, try again shortly." },
       502,

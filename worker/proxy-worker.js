@@ -30,7 +30,7 @@ const UUID_RE =
 
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
-  const allowList = (env.ALLOWED_ORIGINS || "https://pwafy.pages.dev/")
+  const allowList = (env.ALLOWED_ORIGINS || "https://pwafy.pages.dev")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -517,7 +517,7 @@ async function handleSendMagicLink(request, env, cors) {
   } catch (e) {
     return jsonResponse({ error: "Invalid request body" }, 400, cors);
   }
-  const { email, ts_token } = body || {};
+  const { email, ts_token, redirect_to } = body || {};
   if (
     typeof email !== "string" ||
     !EMAIL_RE.test(email) ||
@@ -538,15 +538,34 @@ async function handleSendMagicLink(request, env, cors) {
     );
   }
 
+  // Only ever redirect back to an origin we ourselves serve from — never
+  // trust a client-supplied URL outright, or this becomes an open redirect.
+  // Falls back to Supabase's dashboard "Site URL" default when the
+  // client didn't send one, or sent one we don't recognize.
+  const allowedOrigins = (env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  let safeRedirect = null;
+  if (typeof redirect_to === "string") {
+    try {
+      const u = new URL(redirect_to);
+      if (allowedOrigins.includes(u.origin)) safeRedirect = redirect_to;
+    } catch (e) {
+      /* ignore malformed redirect_to, fall back to Supabase's Site URL */
+    }
+  }
+
+  const otpBody = { email, create_user: true };
+  if (safeRedirect) otpBody.redirect_to = safeRedirect;
+
   const res = await fetch(env.SUPABASE_URL + "/auth/v1/otp", {
     method: "POST",
     headers: {
       apikey: env.SUPABASE_ANON_KEY,
       "Content-Type": "application/json",
     },
-    // create_user:true matches the original signInWithOtp() default — first
-    // sign-in doubles as account creation, same as before this was proxied.
-    body: JSON.stringify({ email, create_user: true }),
+    body: JSON.stringify(otpBody),
   });
 
   if (!res.ok) {

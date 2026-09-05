@@ -142,6 +142,12 @@ async function sendMagicLink() {
   statusEl.innerHTML =
     '<div class="pw-loader"><span class="ring"></span><span class="msg">Sending link&hellip;</span></div>';
 
+  // Where to send the user back after they click the link — always the
+  // real page they're on right now, never left to Supabase's dashboard
+  // "Site URL" default (that default is what silently drifted to a stale
+  // domain and caused the redirect-to-nowhere bug).
+  const redirectTo = window.location.origin + window.location.pathname;
+
   // Routed through the Worker (which verifies Turnstile + rate-limits by IP)
   // when it's deployed, so a script can't hammer Supabase's OTP endpoint
   // directly from the browser. Falls back to the direct SDK call only when
@@ -153,7 +159,11 @@ async function sendMagicLink() {
       const res = await fetch(CONFIG.PROXY_URL + "/send-magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, ts_token: authTurnstileToken }),
+        body: JSON.stringify({
+          email,
+          ts_token: authTurnstileToken,
+          redirect_to: redirectTo,
+        }),
       });
       const data = await res.json();
       if (!res.ok)
@@ -162,7 +172,10 @@ async function sendMagicLink() {
       error = { message: "Could not reach the server. Try again in a moment." };
     }
   } else {
-    const result = await supabaseClient.auth.signInWithOtp({ email });
+    const result = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo },
+    });
     error = result.error;
   }
 

@@ -8,7 +8,7 @@ SUPABASE_URL = "https://erwfyqpltzpvqerxaqpn.supabase.co"
 # Safe as a plain var (not a secret): update this if you rotate the anon key.
 SUPABASE_ANON_KEY = "sb_publishable_03FBVxS0kMjKtvoQgFGhHg_v3Fqf1at"
 
-ALLOWED_ORIGINS = "https://pwafy.pages.dev/"
+ALLOWED_ORIGINS = "https://pwafy.pages.dev,https://pwafy.ayocodes-pwafy.workers.dev"
 
 
 [triggers]

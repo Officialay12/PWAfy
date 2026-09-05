@@ -18,7 +18,7 @@
 const CONFIG = {
   SUPABASE_URL: "https://erwfyqpltzpvqerxaqpn.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_03FBVxS0kMjKtvoQgFGhHg_v3Fqf1at",
-  PROXY_URL: "https://pwafy.ayocodes-pwafy.workers.dev",
+  PROXY_URL: "https://pwafy-api.ayocodes-pwafy.workers.dev",
   TURNSTILE_SITE_KEY: "YOUR_TURNSTILE_SITE_KEY",
   PAYSTACK_PUBLIC_KEY: "pk_live_248867e9f19f57916d0b5e4fd55ba30712aa5cbf",
   STUDIO_PRICE_NGN: 4000,

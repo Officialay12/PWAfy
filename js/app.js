@@ -1,5 +1,5 @@
 /* ===========================================================
-   PWAfy — app.js
+   PWAfy, app.js
    Boot sequence, theme toggle, and wiring for everything outside
    the wizard (nav, modals, pricing).
    Built by AYOCODES
@@ -72,6 +72,61 @@
       document.getElementById("tool").scrollIntoView({ behavior: "smooth" });
   }
 
+  /* ---------------- Mobile nav menu ---------------- */
+  // The mobile dropdown mirrors the account slot and "Open the builder"
+  // action rather than duplicating markup, so renderAccountBar() only ever
+  // has to write to one bar of truth (accountSlot) and this just clones it.
+  function closeNavMenu() {
+    const nav = document.getElementById("mainNav");
+    nav.classList.remove("menu-open");
+    document
+      .getElementById("btnNavMenu")
+      .setAttribute("aria-expanded", "false");
+    document.getElementById("navMenuIcon").innerHTML = "&#9776;";
+  }
+
+  function initMobileNav() {
+    const nav = document.getElementById("mainNav");
+    const btn = document.getElementById("btnNavMenu");
+    const icon = document.getElementById("navMenuIcon");
+    btn.onclick = () => {
+      const open = nav.classList.toggle("menu-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      icon.innerHTML = open ? "&#10005;" : "&#9776;";
+      if (open) syncMobileAccountSlot();
+    };
+    document.getElementById("btnOpenToolMobile").onclick = () => {
+      closeNavMenu();
+      document.getElementById("tool").scrollIntoView({ behavior: "smooth" });
+    };
+    document.getElementById("themeToggleMobile").onclick = () =>
+      document.getElementById("themeToggle").click();
+    document.addEventListener("click", (e) => {
+      if (!nav.classList.contains("menu-open")) return;
+      if (nav.contains(e.target)) return;
+      closeNavMenu();
+    });
+  }
+
+  // Keeps the mobile panel's account slot showing the same sign-in state as
+  // the desktop one, without renderAccountBar() needing to know about the
+  // mobile panel at all.
+  function syncMobileAccountSlot() {
+    const desktopSlot = document.getElementById("accountSlot");
+    const mobileSlot = document.getElementById("accountSlotMobile");
+    if (!desktopSlot || !mobileSlot) return;
+    mobileSlot.innerHTML = desktopSlot.innerHTML;
+    mobileSlot.querySelectorAll("button, a").forEach((el, i) => {
+      const original = desktopSlot.querySelectorAll("button, a")[i];
+      if (original)
+        el.onclick = () => {
+          closeNavMenu();
+          original.click();
+        };
+    });
+  }
+  window.syncMobileAccountSlot = syncMobileAccountSlot;
+
   /* ---------------- Auth modal wiring ---------------- */
   function initAuthModalControls() {
     document.getElementById("btnCloseAuth").onclick = closeAuthModal;
@@ -124,11 +179,14 @@
     cacheEls();
     renderAll();
     initNav();
+    initMobileNav();
     initAuthModalControls();
     initTransferModalControls();
     initTeamModalControls();
+    initNameModalControls();
     initPricing();
     renderAccountBar();
     initAuth();
+    initAssistant();
   });
 })();

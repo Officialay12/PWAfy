@@ -1,13 +1,36 @@
 const FETCH_TIMEOUT_MS = 8000;
 const MAX_HTML_BYTES = 2_000_000; // 2MB cap so a huge page can't tie up the worker
-const SCAN_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6 hours — cuts repeat-scan load a lot
+const SCAN_CACHE_TTL_SECONDS = 60 * 60 * 6; // 6 hours, cuts repeat-scan load a lot
 const RATE_LIMIT_PER_MINUTE = 12; // per client IP, on the scan endpoint only
 const TRANSFER_RATE_LIMIT_PER_HOUR = 6; // per client IP, on account-creation only
 const MAGIC_LINK_RATE_LIMIT_PER_HOUR = 5; // per client IP, on sign-in requests
 const PLAN_DURATION_DAYS = 30; // how long a paid plan lasts after a successful charge
+const ASSISTANT_RATE_LIMIT_PER_MINUTE = 8; // per client IP, on the PWAfy AI endpoint
+const ASSISTANT_MESSAGE_MAX_CHARS = 800;
+const ASSISTANT_HISTORY_MAX_TURNS = 8;
+const ASSISTANT_MODEL = "llama-3.3-70b-versatile";
 
-// SOURCE OF TRUTH for plan prices. Never trust a client-supplied amount —
-// the frontend's CONFIG.STUDIO_PRICE_NGN / AGENCY_PRICE_NGN are for display
+// Everything the assistant is allowed to know about PWAfy, kept in sync
+// with the copy on the site itself (index.html / terms.html). Never lets
+// the model reveal what actually powers it underneath, every credit the
+// user sees is PWAfy / ayocodes only.
+const ASSISTANT_SYSTEM_PROMPT = `You are PWAfy AI, the built-in assistant on PWAfy, a browser-based tool that turns any website into an installable Progressive Web App.
+
+What PWAfy does: from a URL scan or manual details, it generates a spec-correct manifest.json, a full icon set (72 to 512px), iOS splash screens for common device sizes, a working service worker with a chosen caching strategy (cache-first, network-first, or stale-while-revalidate), and a plain-language installability quality score. Everything is generated client-side in the browser, nothing is hosted or rehosted, the user copies the output onto their own server.
+
+Scanning a URL: PWAfy's server proxies the request so it can read response headers, only reads the page's public title, description, theme color, and icon link, and does not store the page content beyond a short cache used to speed up repeat scans of the same URL.
+
+Accounts: optional, passwordless (a one-time email link), used to save brand presets, build history, and to unlock paid plans. No password is ever stored.
+
+Plans: Free (one build per account or browser session, full manifest and icon set, one caching strategy, one saved preset, quality score). Studio (unlimited builds and re-generation, up to 10 saved presets, app shortcuts and screenshots for a richer install prompt). Agency (everything in Studio, unlimited presets, Web Push boilerplate add-on, fully white-labelled output with no PWAfy branding, a shared team workspace for up to 5 seats). Studio and Agency are billed monthly in Nigerian naira, payable by card or direct bank transfer through Paystack, each paid period runs 30 days from a successful payment, cancelling returns the account to Free immediately with no partial refund for the remaining days. Prices shown in other currencies are an approximate guide only, card charges always settle in naira.
+
+Support: users can cancel a paid plan any time from the account menu. Payment issues should be raised with the account email and payment reference.
+
+Tone: friendly, concise, plain language, sentence case, no corporate filler. If you don't know something specific about a user's own account or a live payment status, say so plainly and suggest checking the account menu or contacting support, don't guess.
+
+Never mention or imply which company or model actually powers you behind the scenes. If asked who made you or what you run on, say you're PWAfy AI, built by ayocodes for PWAfy. Never say you are Groq, Llama, OpenAI, or any other provider or model name, and don't discuss your own architecture.`;
+
+// SOURCE OF TRUTH for plan prices. Never trust a client-supplied amount, // the frontend's CONFIG.STUDIO_PRICE_NGN / AGENCY_PRICE_NGN are for display
 // only. Every upgrade path below re-derives the required amount from here
 // and refuses to upgrade a plan for less.
 const PLAN_PRICES_NGN = {
@@ -48,7 +71,7 @@ function corsHeaders(request, env) {
 
 // Applied to every response this Worker sends. This Worker only ever
 // serves JSON to fetch()/XHR callers (never HTML), so a maximally strict
-// CSP is safe here — there is no page context for it to break.
+// CSP is safe here, there is no page context for it to break.
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
@@ -126,7 +149,7 @@ async function checkRateLimit(
   limit = RATE_LIMIT_PER_MINUTE,
   windowSeconds = 60,
 ) {
-  if (!env.RATE_LIMIT) return true; // if the KV isn't bound yet, don't block — fail open
+  if (!env.RATE_LIMIT) return true; // if the KV isn't bound yet, don't block, fail open
   const window = Math.floor(Date.now() / (windowSeconds * 1000));
   const key = "rl:" + bucketKey + ":" + window;
   const current = parseInt((await env.RATE_LIMIT.get(key)) || "0", 10);
@@ -139,7 +162,7 @@ async function checkRateLimit(
 
 // Verifies a Cloudflare Turnstile token server-side. Returns true (and skips
 // the check entirely) if no TURNSTILE_SECRET_KEY is configured, matching the
-// frontend's TURNSTILE_CONFIGURED gate — Turnstile is optional, not required.
+// frontend's TURNSTILE_CONFIGURED gate, Turnstile is optional, not required.
 async function verifyTurnstile(token, env, remoteip) {
   if (!env.TURNSTILE_SECRET_KEY) return true;
   if (!token) return false;
@@ -184,7 +207,7 @@ async function handleScan(request, env, cors) {
     return jsonResponse(
       {
         error:
-          "Too many scans from this connection — wait a minute and try again.",
+          "Too many scans from this connection, wait a minute and try again.",
       },
       429,
       cors,
@@ -200,7 +223,7 @@ async function handleScan(request, env, cors) {
     return jsonResponse(
       {
         error:
-          "Verification failed — please complete the challenge and try again.",
+          "Verification failed, please complete the challenge and try again.",
       },
       403,
       cors,
@@ -299,7 +322,7 @@ function concatChunks(chunks) {
 }
 
 /* ============================================================
-   1c. VERIFY DEPLOY — checks a real, already-deployed site against
+   1c. VERIFY DEPLOY, checks a real, already-deployed site against
    the same installability criteria the quality score estimates
    client-side, but against what's actually live: fetches the real
    manifest.json, checks required fields and icon declarations, and
@@ -315,7 +338,7 @@ async function handleVerifyDeploy(request, env, cors) {
     return jsonResponse(
       {
         error:
-          "Too many checks from this connection — wait a bit and try again.",
+          "Too many checks from this connection, wait a bit and try again.",
       },
       429,
       cors,
@@ -447,7 +470,7 @@ async function handleVerifyDeploy(request, env, cors) {
 
   // Heuristic: checks the two conventional service-worker paths (this is
   // exactly where PWAfy's own generated register-sw.js registers one).
-  // A site using a different path won't be detected here — that's a real
+  // A site using a different path won't be detected here, that's a real
   // limitation of checking from outside the page's JS execution, not a bug.
   let swFound = false;
   for (const swPath of ["/sw.js", "/service-worker.js"]) {
@@ -481,9 +504,9 @@ async function handleVerifyDeploy(request, env, cors) {
 
 /* ============================================================
    1b. MAGIC-LINK SIGN-IN (Turnstile + rate limit, then proxied to
-   Supabase's own OTP endpoint — so a script can no longer hammer
+   Supabase's own OTP endpoint, so a script can no longer hammer
    Supabase directly from the browser to spam someone's inbox).
-   Uses SUPABASE_ANON_KEY (a publishable key — safe as a plain var,
+   Uses SUPABASE_ANON_KEY (a publishable key, safe as a plain var,
    same key already shipped in the frontend's CONFIG).
    ============================================================ */
 
@@ -505,7 +528,7 @@ async function handleSendMagicLink(request, env, cors) {
   );
   if (!okRate) {
     return jsonResponse(
-      { error: "Too many sign-in attempts — wait a while and try again." },
+      { error: "Too many sign-in attempts, wait a while and try again." },
       429,
       cors,
     );
@@ -531,14 +554,14 @@ async function handleSendMagicLink(request, env, cors) {
     return jsonResponse(
       {
         error:
-          "Verification failed — please complete the challenge and try again.",
+          "Verification failed, please complete the challenge and try again.",
       },
       403,
       cors,
     );
   }
 
-  // Only ever redirect back to an origin we ourselves serve from — never
+  // Only ever redirect back to an origin we ourselves serve from, never
   // trust a client-supplied URL outright, or this becomes an open redirect.
   // Falls back to Supabase's dashboard "Site URL" default when the
   // client didn't send one, or sent one we don't recognize.
@@ -583,7 +606,7 @@ async function handleSendMagicLink(request, env, cors) {
 }
 
 /* ============================================================
-   2. PAY WITH TRANSFER — create a dedicated virtual account
+   2. PAY WITH TRANSFER, create a dedicated virtual account
    ============================================================ */
 
 async function handleCreateTransferAccount(request, env, cors) {
@@ -603,7 +626,7 @@ async function handleCreateTransferAccount(request, env, cors) {
   );
   if (!okRate) {
     return jsonResponse(
-      { error: "Too many attempts — wait a while and try again." },
+      { error: "Too many attempts, wait a while and try again." },
       429,
       cors,
     );
@@ -616,7 +639,7 @@ async function handleCreateTransferAccount(request, env, cors) {
     return jsonResponse({ error: "Invalid request body" }, 400, cors);
   }
   const { plan, user_id, email } = body || {};
-  // amount_ngn is intentionally NOT read from the request body — it is
+  // amount_ngn is intentionally NOT read from the request body, it is
   // always derived from PLAN_PRICES_NGN below, so a tampered client value
   // can never change what a user is actually charged.
   if (!plan || !user_id || !email)
@@ -690,7 +713,7 @@ async function handleCreateTransferAccount(request, env, cors) {
 }
 
 /* ============================================================
-   3. PAYSTACK WEBHOOK — the only place a plan is ever upgraded
+   3. PAYSTACK WEBHOOK, the only place a plan is ever upgraded
    ============================================================ */
 
 async function verifyPaystackSignature(request, env, rawBody) {
@@ -762,7 +785,7 @@ async function handlePaystackWebhook(request, env) {
   const data = event.data || {};
 
   // Card checkout success. metadata.plan is CLIENT-SUPPLIED (set by the
-  // browser during checkout) and must never be trusted on its own — it only
+  // browser during checkout) and must never be trusted on its own, it only
   // says what plan the user *claims* to be paying for. The amount actually
   // charged (data.amount, in kobo, from Paystack's own event) is what's
   // checked against PLAN_PRICES_NGN below, so paying a small amount with a
@@ -786,8 +809,8 @@ async function handlePaystackWebhook(request, env) {
   // Bank transfer received into a dedicated virtual account. The plan and
   // expected amount are looked up from what THIS SERVER stored at account
   // -creation time (handleCreateTransferAccount, which derives amount_ngn
-  // from PLAN_PRICES_NGN, not from anything the client sent) — never from
-  // the webhook payload itself — and the credited amount is checked against
+  // from PLAN_PRICES_NGN, not from anything the client sent), never from
+  // the webhook payload itself, and the credited amount is checked against
   // that expected amount before upgrading.
   if (
     event.event === "dedicatedaccount.credit" ||
@@ -820,7 +843,7 @@ async function handlePaystackWebhook(request, env) {
 }
 
 /* ============================================================
-   4. SCHEDULED — daily cron: downgrade any expired paid plan.
+   4. SCHEDULED, daily cron: downgrade any expired paid plan.
    Plans are 30-day charges, not real subscriptions (Paystack Inline
    is a one-off charge), so this is what actually enforces "per month"
    instead of a single payment granting access forever.
@@ -829,7 +852,7 @@ async function handlePaystackWebhook(request, env) {
 async function downgradeExpiredPlans(env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return;
   const nowIso = new Date().toISOString();
-  // A single PostgREST request patches every matching row — no need to
+  // A single PostgREST request patches every matching row, no need to
   // fetch ids first and loop over them.
   await fetch(
     env.SUPABASE_URL +
@@ -846,6 +869,131 @@ async function downgradeExpiredPlans(env) {
       body: JSON.stringify({ plan: "free", plan_expires_at: null }),
     },
   );
+}
+
+/* ============================================================
+   PWAfy AI — a small assistant that knows the site, backed by an
+   inference API. The key stays server-side (set with
+   `wrangler secret put GROQ_API_KEY`, never a plain [vars] entry
+   and never shipped to the browser). Every user-facing credit for
+   this feature belongs to PWAfy / ayocodes, the underlying provider
+   is deliberately never named to the client.
+   ============================================================ */
+
+async function handleAskAI(request, env, cors) {
+  if (!env.GROQ_API_KEY) {
+    return jsonResponse(
+      { error: "PWAfy AI isn't configured on the server yet." },
+      501,
+      cors,
+    );
+  }
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const okRate = await checkRateLimit(
+    env,
+    "assistant:" + ip,
+    ASSISTANT_RATE_LIMIT_PER_MINUTE,
+    60,
+  );
+  if (!okRate) {
+    return jsonResponse(
+      { error: "Too many messages, wait a minute and try again." },
+      429,
+      cors,
+    );
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return jsonResponse({ error: "Invalid request body" }, 400, cors);
+  }
+  const { message, history } = body || {};
+  if (
+    typeof message !== "string" ||
+    !message.trim() ||
+    message.length > ASSISTANT_MESSAGE_MAX_CHARS
+  ) {
+    return jsonResponse(
+      {
+        error:
+          "Message must be non-empty and under " +
+          ASSISTANT_MESSAGE_MAX_CHARS +
+          " characters.",
+      },
+      400,
+      cors,
+    );
+  }
+
+  // The client's own history is context only, never trusted as anything
+  // more, every turn is capped in both count and length, and only
+  // user/assistant roles are ever forwarded, so a crafted history can't
+  // inject a new system message.
+  const cleanHistory = Array.isArray(history)
+    ? history
+        .filter(
+          (m) =>
+            m &&
+            (m.role === "user" || m.role === "assistant") &&
+            typeof m.content === "string" &&
+            m.content.length <= ASSISTANT_MESSAGE_MAX_CHARS,
+        )
+        .slice(-ASSISTANT_HISTORY_MAX_TURNS)
+        .map((m) => ({ role: m.role, content: m.content }))
+    : [];
+
+  const messages = [
+    { role: "system", content: ASSISTANT_SYSTEM_PROMPT },
+    ...cleanHistory,
+    { role: "user", content: message },
+  ];
+
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + env.GROQ_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ASSISTANT_MODEL,
+        messages,
+        temperature: 0.4,
+        max_tokens: 400,
+      }),
+    });
+    if (!res.ok) {
+      return jsonResponse(
+        {
+          error: "PWAfy AI couldn't process that just now, try again shortly.",
+        },
+        502,
+        cors,
+      );
+    }
+    const data = await res.json();
+    const reply =
+      data.choices && data.choices[0] && data.choices[0].message
+        ? data.choices[0].message.content
+        : null;
+    if (!reply) {
+      return jsonResponse(
+        { error: "PWAfy AI didn't return a reply, try again." },
+        502,
+        cors,
+      );
+    }
+    return jsonResponse({ reply }, 200, cors);
+  } catch (e) {
+    return jsonResponse(
+      { error: "Couldn't reach PWAfy AI right now, try again shortly." },
+      502,
+      cors,
+    );
+  }
 }
 
 /* ============================================================
@@ -872,8 +1020,11 @@ export default {
     if (url.pathname === "/verify-deploy" && request.method === "POST") {
       return handleVerifyDeploy(request, env, cors);
     }
+    if (url.pathname === "/ask-pwafy-ai" && request.method === "POST") {
+      return handleAskAI(request, env, cors);
+    }
     if (url.pathname === "/paystack-webhook" && request.method === "POST") {
-      // Server-to-server call from Paystack, not a browser — CORS headers
+      // Server-to-server call from Paystack, not a browser, CORS headers
       // don't apply here, so this intentionally doesn't use `cors`.
       return handlePaystackWebhook(request, env);
     }
@@ -884,7 +1035,7 @@ export default {
   },
 
   // Cloudflare invokes this on the schedule set in wrangler.toml's
-  // [triggers] crons — no HTTP request involved.
+  // [triggers] crons, no HTTP request involved.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(downgradeExpiredPlans(env));
   },

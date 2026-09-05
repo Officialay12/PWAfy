@@ -1,7 +1,7 @@
 /* ===========================================================
-   PWAfy — auth.js
+   PWAfy, auth.js
    Accounts + saved presets on Supabase's free tier.
-   Passwordless (magic link) — no password storage, no reset flow.
+   Passwordless (magic link), no password storage, no reset flow.
    Built by AYOCODES
    =========================================================== */
 
@@ -13,10 +13,21 @@ const auth = {
   plan: "free",
   planExpiresAt: null,
   buildsUsed: 0,
+  displayName: null,
 };
+
+const NAME_PROMPT_SESSION_KEY = "pwafy_name_prompted";
+
+// A friendly fallback whenever no display name is set yet, used instead of
+// ever printing the raw email in the account chip.
+function accountLabel() {
+  if (auth.displayName) return auth.displayName;
+  if (!auth.user || !auth.user.email) return "Account";
+  return auth.user.email.split("@")[0];
+}
 let supabaseClient = null;
 
-// Turnstile widget state for the auth modal — same pattern as the scan
+// Turnstile widget state for the auth modal, same pattern as the scan
 // step's widget in wizard.js. A no-op whenever Turnstile isn't configured,
 // so this stays completely inert until a real TURNSTILE_SITE_KEY is set.
 let authTurnstileWidgetId = null;
@@ -88,15 +99,17 @@ function renderAccountBar() {
     return;
   }
   if (auth.user) {
-    const initial = (auth.user.email || "?").charAt(0).toUpperCase();
+    const label = accountLabel();
+    const initial = label.charAt(0).toUpperCase();
     const cancelBtn =
       auth.plan !== "free"
         ? '<button id="btnCancelPlan">Cancel plan</button>'
         : "";
     const teamBtn =
       auth.plan === "agency" ? '<button id="btnOpenTeam">Team</button>' : "";
-    slot.innerHTML = `<div class="account-chip"><span class="avatar">${initial}</span><span class="chip-email" title="${escapeHtml(auth.user.email)}">${escapeHtml(auth.user.email)}</span> &middot; ${planBadge(auth.plan)}${teamBtn}${cancelBtn}<button id="btnSignOut">Sign out</button></div>`;
+    slot.innerHTML = `<div class="account-chip"><span class="avatar">${initial}</span><span class="chip-email" title="${escapeHtml(label)}">${escapeHtml(label)}</span> &middot; ${planBadge(auth.plan)}<button id="btnEditName">Edit name</button>${teamBtn}${cancelBtn}<button id="btnSignOut">Sign out</button></div>`;
     document.getElementById("btnSignOut").onclick = signOut;
+    document.getElementById("btnEditName").onclick = () => openNameModal(false);
     const cancelEl = document.getElementById("btnCancelPlan");
     if (cancelEl) cancelEl.onclick = cancelPlan;
     const teamEl = document.getElementById("btnOpenTeam");
@@ -105,6 +118,84 @@ function renderAccountBar() {
     slot.innerHTML = `<button class="btn-signin" id="btnOpenAuth">Sign in</button>`;
     document.getElementById("btnOpenAuth").onclick = openAuthModal;
   }
+  if (typeof window.syncMobileAccountSlot === "function")
+    window.syncMobileAccountSlot();
+}
+
+/* ============================================================
+   Display name — replaces the raw email in the account chip.
+   Stored on profiles.display_name, written only through the
+   set_display_name() RPC (see supabase-schema.sql) so a user can
+   never touch any other column on their own profile row this way.
+   ============================================================ */
+
+function openNameModal(isFirstTime) {
+  const modal = document.getElementById("nameModal");
+  const input = document.getElementById("displayNameInput");
+  const skipBtn = document.getElementById("btnSkipName");
+  const status = document.getElementById("nameModalStatus");
+  input.value = auth.displayName || "";
+  status.innerHTML = "";
+  skipBtn.style.display = isFirstTime ? "" : "none";
+  modal.classList.add("open");
+  input.focus();
+}
+
+function closeNameModal() {
+  document.getElementById("nameModal").classList.remove("open");
+}
+
+async function saveDisplayName() {
+  const input = document.getElementById("displayNameInput");
+  const status = document.getElementById("nameModalStatus");
+  const name = (input.value || "").trim();
+  if (!name) {
+    status.innerHTML =
+      '<div class="status-line warn">Enter a name first.</div>';
+    return;
+  }
+  if (name.length > 40) {
+    status.innerHTML =
+      '<div class="status-line warn">Keep it under 40 characters.</div>';
+    return;
+  }
+  if (!supabaseClient || !auth.user) {
+    status.innerHTML =
+      '<div class="status-line warn">Sign in first to save a display name.</div>';
+    return;
+  }
+  status.innerHTML =
+    '<div class="pw-loader"><span class="ring"></span><span class="msg">Saving&hellip;</span></div>';
+  const { error } = await supabaseClient.rpc("set_display_name", {
+    p_name: name,
+  });
+  if (error) {
+    status.innerHTML =
+      '<div class="status-line warn">' + escapeHtml(error.message) + "</div>";
+    return;
+  }
+  auth.displayName = name;
+  closeNameModal();
+  renderAccountBar();
+}
+
+function initNameModalControls() {
+  document.getElementById("btnSaveName").onclick = saveDisplayName;
+  document.getElementById("btnSkipName").onclick = closeNameModal;
+  document.getElementById("nameModal").addEventListener("click", (e) => {
+    if (e.target.id === "nameModal") closeNameModal();
+  });
+}
+
+// Shown once per browser session right after a sign-in resolves with no
+// display_name set yet. Skipping it just means it asks again next session,
+// same soft-nag pattern as everything else optional in this app.
+function maybePromptForName() {
+  if (!auth.user || auth.displayName) return;
+  const key = NAME_PROMPT_SESSION_KEY + ":" + auth.user.id;
+  if (sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key, "1");
+  openNameModal(true);
 }
 
 function openAuthModal() {
@@ -112,7 +203,7 @@ function openAuthModal() {
   const note = document.getElementById("authModalConfigNote");
   note.innerHTML = SUPABASE_CONFIGURED
     ? ""
-    : '<div class="config-note">Accounts aren\u2019t connected yet — this is a preview. Add a free Supabase project URL and key in CONFIG at the top of state.js.</div>';
+    : '<div class="config-note">Accounts aren\u2019t connected yet, this is a preview. Add a free Supabase project URL and key in CONFIG at the top of state.js.</div>';
   document.getElementById("authModalStatus").innerHTML = "";
   renderAuthTurnstileWidget();
 }
@@ -142,7 +233,7 @@ async function sendMagicLink() {
   statusEl.innerHTML =
     '<div class="pw-loader"><span class="ring"></span><span class="msg">Sending link&hellip;</span></div>';
 
-  // Where to send the user back after they click the link — always the
+  // Where to send the user back after they click the link, always the
   // real page they're on right now, never left to Supabase's dashboard
   // "Site URL" default (that default is what silently drifted to a stale
   // domain and caused the redirect-to-nowhere bug).
@@ -151,7 +242,7 @@ async function sendMagicLink() {
   // Routed through the Worker (which verifies Turnstile + rate-limits by IP)
   // when it's deployed, so a script can't hammer Supabase's OTP endpoint
   // directly from the browser. Falls back to the direct SDK call only when
-  // no Worker is configured at all — same "additive, nothing breaks"
+  // no Worker is configured at all, same "additive, nothing breaks"
   // fallback pattern used elsewhere in this file.
   let error = null;
   if (PROXY_CONFIGURED) {
@@ -206,6 +297,7 @@ async function signOut() {
   auth.plan = "free";
   auth.planExpiresAt = null;
   auth.buildsUsed = 0;
+  auth.displayName = null;
   renderAccountBar();
   renderPresetsBar();
   renderBuildHistoryBar();
@@ -215,20 +307,20 @@ async function loadProfile() {
   if (!supabaseClient || !auth.user) return;
   const { data, error } = await supabaseClient
     .from("profiles")
-    .select("plan,plan_expires_at,builds_used")
+    .select("plan,plan_expires_at,builds_used,display_name")
     .eq("id", auth.user.id)
     .single();
   if (!error && data) {
     auth.plan = data.plan;
     auth.planExpiresAt = data.plan_expires_at;
     auth.buildsUsed = data.builds_used;
+    auth.displayName = data.display_name || null;
   }
 }
 
 // Self-serve downgrade. Row Level Security only allows a user to update
 // their OWN row and only to plan:'free' with plan_expires_at:null (see
-// the "Users can cancel their own plan" policy in supabase-schema.sql) —
-// so this can never be used to fake an upgrade, only to cancel one early.
+// the "Users can cancel their own plan" policy in supabase-schema.sql), // so this can never be used to fake an upgrade, only to cancel one early.
 async function cancelPlan() {
   if (!supabaseClient || !auth.user) return;
   if (auth.plan === "free") return;
@@ -247,7 +339,7 @@ async function cancelPlan() {
   await loadProfile();
   renderAccountBar();
   paymentStatus(
-    "Your plan has been cancelled — you\u2019re back on Free.",
+    "Your plan has been cancelled, you\u2019re back on Free.",
     "info",
   );
 }
@@ -265,6 +357,7 @@ async function initAuth() {
     await loadPresets();
     await loadBuildHistory();
     await loadTeam();
+    maybePromptForName();
   }
   renderAccountBar();
   renderPresetsBar();
@@ -275,6 +368,7 @@ async function initAuth() {
       await loadPresets();
       await loadBuildHistory();
       await loadTeam();
+      maybePromptForName();
     } else {
       auth.presets = [];
       auth.builds = [];
@@ -282,6 +376,7 @@ async function initAuth() {
       auth.plan = "free";
       auth.planExpiresAt = null;
       auth.buildsUsed = 0;
+      auth.displayName = null;
       renderPresetsBar();
       renderBuildHistoryBar();
     }
@@ -383,7 +478,7 @@ function renderPresetsBar() {
     return;
   }
   if (!auth.presets.length) {
-    bar.innerHTML = `<div class="status-line info" style="margin-bottom:18px;">No saved presets yet — build a PWA and save its settings from the Generate step.</div>`;
+    bar.innerHTML = `<div class="status-line info" style="margin-bottom:18px;">No saved presets yet, build a PWA and save its settings from the Generate step.</div>`;
     return;
   }
   bar.innerHTML = `
@@ -402,13 +497,13 @@ function renderPresetsBar() {
 }
 
 /* ============================================================
-   Build history — a lightweight, automatic record of recent builds
-   (config only, same as presets — never the icon itself) so a signed-in
+   Build history, a lightweight, automatic record of recent builds
+   (config only, same as presets, never the icon itself) so a signed-in
    user can reload a recent build's settings without re-uploading anything.
    ============================================================ */
 
 async function saveBuildRecord(qualityScore) {
-  if (!supabaseClient || !auth.user) return; // best-effort — never blocks a download
+  if (!supabaseClient || !auth.user) return; // best-effort, never blocks a download
   const name = state.name || state.shortName || "Untitled build";
   const config = {
     name: state.name,
@@ -432,7 +527,7 @@ async function saveBuildRecord(qualityScore) {
     });
     await loadBuildHistory();
   } catch (e) {
-    /* history is a convenience, not a requirement — swallow failures */
+    /* history is a convenience, not a requirement, swallow failures */
   }
 }
 
@@ -476,10 +571,10 @@ function renderBuildHistoryBar() {
 }
 
 /* ============================================================
-   Teams (Agency plan) — a shared workspace where teammates can see
+   Teams (Agency plan), a shared workspace where teammates can see
    each other's saved presets. Membership changes only ever happen
    through the security-definer RPCs below (create_team,
-   create_team_invite, redeem_team_invite) — there's no direct table
+   create_team_invite, redeem_team_invite), there's no direct table
    write path for a regular user, so all of the actual rules (agency
    plan required, one team per user, invite validity) are enforced in
    Postgres, not just in this client code.
@@ -625,7 +720,7 @@ async function renderTeamPanel(errorMsg, freshInviteCode) {
         )
         .join("");
       if (seatEl) seatEl.textContent = `\u00b7 ${roster.length}/5 seats`;
-      // Team plan cap — Agency includes up to 5 seats. Disabling the button
+      // Team plan cap, Agency includes up to 5 seats. Disabling the button
       // client-side just avoids a surprise error; create_team_invite()'s own
       // count check is the real limit no matter how the call is made.
       const genBtn = document.getElementById("btnGenInvite");

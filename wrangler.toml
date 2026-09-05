@@ -4,11 +4,17 @@ compatibility_date = "2024-09-23"
 
 [vars]
 SUPABASE_URL = "https://erwfyqpltzpvqerxaqpn.supabase.co"
-# Publishable/anon key — same one shipped client-side in CONFIG.SUPABASE_ANON_KEY.
+# Publishable/anon key, same one shipped client-side in CONFIG.SUPABASE_ANON_KEY.
 # Safe as a plain var (not a secret): update this if you rotate the anon key.
 SUPABASE_ANON_KEY = "sb_publishable_03FBVxS0kMjKtvoQgFGhHg_v3Fqf1at"
 
 ALLOWED_ORIGINS = "https://pwafy.pages.dev,https://pwafy.ayocodes-pwafy.workers.dev"
+
+# PWAfy AI needs a Groq API key. Never put it here as a plain var, it must
+# be set as a secret so it never lands in this file or in git history:
+#   wrangler secret put GROQ_API_KEY
+# Everything the assistant knows and every credit it gives points at
+# PWAfy / ayocodes, see ASSISTANT_SYSTEM_PROMPT in proxy-worker.js.
 
 
 [triggers]

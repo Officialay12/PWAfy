@@ -1,5 +1,5 @@
 /* ===========================================================
-   PWAfy — preview.js
+   PWAfy, preview.js
    Renders the phone/desktop preview column so people can see
    exactly what an install looks like before they download anything.
    Built by AYOCODES
@@ -156,7 +156,7 @@ function renderPhonePreview() {
       const ibIcon = document.getElementById("ibIcon");
       if (state.iconDataUrl) ibIcon.src = state.iconDataUrl;
     } else {
-      // iOS Safari has no native install prompt — this is the real flow:
+      // iOS Safari has no native install prompt, this is the real flow:
       // Share sheet -> Add to Home Screen. Showing this matters because
       // most people building a PWA don't realize iOS works completely
       // differently from Android here.
@@ -188,8 +188,8 @@ function renderDesktopPreview() {
   `;
 
   if (state.phoneView === "installed") {
-    // An installed PWA opens in its own window — no tabs, no full address
-    // bar, just a minimal title bar — and gets pinned to the taskbar/dock.
+    // An installed PWA opens in its own window, no tabs, no full address
+    // bar, just a minimal title bar, and gets pinned to the taskbar/dock.
     chrome.classList.add("installed");
     installIcon.style.display = "none";
     taskbar.style.display = "flex";

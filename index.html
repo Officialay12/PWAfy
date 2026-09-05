@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PWAfy — turn client sites into installable apps</title>
+  <title>PWAfy: turn client sites into installable apps</title>
   <meta name="description"
-    content="Built for freelancers and agencies shipping PWAs for clients. Scan a URL or fill in the details yourself — PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker, scored so you can show it's done right." />
+    content="Built for freelancers and agencies shipping PWAs for clients. Scan a URL or fill in the details yourself, PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker, scored so you can show it's done right." />
   <link rel="canonical" href="https://pwa.ayocodes-pwafy.workers.dev/" />
 
   <!-- Favicons -->
@@ -20,7 +20,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="PWAfy">
-  <meta property="og:title" content="PWAfy — turn any site into an installable app">
+  <meta property="og:title" content="PWAfy: turn any site into an installable app">
   <meta property="og:description"
     content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, a full icon set, an iOS splash set, and a working service worker plus a quality score so you know it's right.">
   <meta property="og:image" content="https://pwa.ayocodes-pwafy.workers.dev/og-image.png">
@@ -30,7 +30,7 @@
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="PWAfy — turn any site into an installable app">
+  <meta name="twitter:title" content="PWAfy: turn any site into an installable app">
   <meta name="twitter:description"
     content="Scan a URL or fill in the details yourself. PWAfy generates a spec-correct manifest, icons, splash screens, and a service worker plus a quality score.">
   <meta name="twitter:image" content="https://pwa.ayocodes-pwafy.workers.dev/og-image.png">
@@ -98,13 +98,25 @@
     </div>
   </div>
 
-  <nav class="nav">
+  <nav class="nav" id="mainNav">
     <div class="wordmark"><span class="dot"></span>PWAfy<span class="by-line">by ayocodes</span></div>
     <div class="nav-right">
       <button class="theme-toggle" id="themeToggle" title="Toggle dark mode"
         aria-label="Toggle dark mode">&#9789;</button>
       <div class="account-slot" id="accountSlot"></div>
       <button class="nav-cta" id="btnOpenTool">Open the builder</button>
+    </div>
+    <button class="nav-menu-btn" id="btnNavMenu" aria-label="Open menu" aria-expanded="false">
+      <span id="navMenuIcon" aria-hidden="true">&#9776;</span>
+    </button>
+    <div class="nav-mobile-panel" id="navMobilePanel">
+      <div class="account-slot" id="accountSlotMobile"></div>
+      <div class="nav-mobile-row">
+        <span>Dark mode</span>
+        <button class="theme-toggle" id="themeToggleMobile" title="Toggle dark mode"
+          aria-label="Toggle dark mode">&#9789;</button>
+      </div>
+      <button class="nav-cta" id="btnOpenToolMobile" style="width:100%;">Open the builder</button>
     </div>
   </nav>
 
@@ -125,6 +137,23 @@
         <button class="btn-primary" id="btnSendLink" style="flex:1;">Send sign-in link</button>
       </div>
       <button class="modal-close" id="btnCloseAuth">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Display name modal: shown once after first sign-in, and reopenable from the account menu -->
+  <div class="modal-overlay" id="nameModal">
+    <div class="modal-box">
+      <h3>What should we call you?</h3>
+      <p>This is the name shown in the account menu instead of your email. You can change it any time.</p>
+      <div class="field">
+        <label for="displayNameInput">Display name</label>
+        <input type="text" id="displayNameInput" placeholder="Ridwan" maxlength="40">
+      </div>
+      <div id="nameModalStatus"></div>
+      <div class="generate-btn-row">
+        <button class="btn-primary" id="btnSaveName" style="flex:1;">Save name</button>
+      </div>
+      <button class="modal-close" id="btnSkipName">Skip for now</button>
     </div>
   </div>
 
@@ -157,7 +186,7 @@
       <p class="hero-kicker"><span class="swatch"></span>manifest.json &middot; icons &middot; splash &middot;
         service-worker.js</p>
       <h1 class="hero-title">Turn client sites into installable apps, ready to hand off.</h1>
-      <p class="hero-sub">Built for freelancers and agencies shipping PWAs for other people's sites — scan a URL or
+      <p class="hero-sub">Built for freelancers and agencies shipping PWAs for other people's sites. Scan a URL or
         fill in the details yourself, and get a complete, spec-correct manifest, a full icon set with iOS splash
         screens, and a working service worker, scored so you can show the client it's done right. Solo builders get
         the exact same tool, free for one build.</p>
@@ -203,7 +232,7 @@
   <section id="proof" style="margin-top:8px;">
     <div class="section-head">
       <h2>What a scan actually turns into</h2>
-      <p>An illustrative walkthrough — not a real customer — using the same fictional coffee-shop site from the
+      <p>An illustrative walkthrough, not a real customer, using the same fictional coffee-shop site from the
         example above, so you can see the three-step shape of a build before you try it on a real URL.</p>
     </div>
     <div class="proof-strip">
@@ -236,7 +265,7 @@
         </div>
       </div>
     </div>
-    <p class="proof-caption">Try it yourself with a real URL in the builder below &mdash; nothing here is faked, it's
+    <p class="proof-caption">Try it yourself with a real URL in the builder below. Nothing here is faked, it's
       the same output the tool produces.</p>
   </section>
 
@@ -364,13 +393,13 @@
     <div class="currency-select-row">
       <label for="currencySelect">Show prices in</label>
       <select id="currencySelect">
-        <option value="NGN">NGN &mdash; Naira</option>
-        <option value="USD">USD &mdash; US Dollar</option>
-        <option value="GBP">GBP &mdash; British Pound</option>
-        <option value="EUR">EUR &mdash; Euro</option>
-        <option value="GHS">GHS &mdash; Cedi</option>
-        <option value="KES">KES &mdash; Shilling</option>
-        <option value="ZAR">ZAR &mdash; Rand</option>
+        <option value="NGN">NGN, Naira</option>
+        <option value="USD">USD, US Dollar</option>
+        <option value="GBP">GBP, British Pound</option>
+        <option value="EUR">EUR, Euro</option>
+        <option value="GHS">GHS, Cedi</option>
+        <option value="KES">KES, Shilling</option>
+        <option value="ZAR">ZAR, Rand</option>
       </select>
     </div>
     <div class="pricing-grid">
@@ -394,7 +423,7 @@
           <li>Unlimited builds &amp; re-generation</li>
           <li>Up to 10 saved brand presets</li>
           <li>App shortcuts &amp; screenshots for a richer install prompt</li>
-          <li>Full icon set, iOS splash &amp; caching output — no build cap</li>
+          <li>Full icon set, iOS splash &amp; caching output, no build cap</li>
         </ul>
         <button class="btn-ghost" id="btnUpgradeStudio">Upgrade to Studio</button>
         <button class="btn-ghost" id="btnTransferStudio" style="margin-top:8px;">Pay with bank transfer</button>
@@ -411,7 +440,7 @@
           <li>Unlimited saved brand presets</li>
           <li>Web Push boilerplate add-on (VAPID keys + subscribe code)</li>
           <li>White-labelled output, no PWAfy branding</li>
-          <li>Team workspace &mdash; up to 5 seats, shared presets</li>
+          <li>Team workspace, up to 5 seats, shared presets</li>
         </ul>
         <button class="btn-primary" id="btnUpgradeAgency">Upgrade to Agency</button>
         <button class="btn-ghost" id="btnTransferAgency" style="margin-top:8px;">Pay with bank transfer</button>
@@ -440,23 +469,23 @@
       <details class="faq-item">
         <summary>Do you store my site or my files?</summary>
         <p>No. Icon processing and file generation happen in your browser. If you scan a URL to prefill fields,
-          PWAfy's server only reads the page's public title, description, theme color, and icon link &mdash; nothing
+          PWAfy's server only reads the page's public title, description, theme color, and icon link, nothing
           else is stored beyond a short cache used to speed up repeat scans of the same page.</p>
       </details>
       <details class="faq-item">
         <summary>What happens after I pay?</summary>
-        <p>Card and bank transfer payments are verified server-side directly against Paystack &mdash; your plan
+        <p>Card and bank transfer payments are verified server-side directly against Paystack, your plan
           updates automatically once the charge or transfer is confirmed, usually within a minute. Paid plans run for
           30 days at a time.</p>
       </details>
       <details class="faq-item">
         <summary>Can I use this for client work?</summary>
-        <p>Yes &mdash; that's what the Agency plan is for: unlimited builds and presets, white-labelled output with no
+        <p>Yes, that's what the Agency plan is for: unlimited builds and presets, white-labelled output with no
           PWAfy branding, the Web Push add-on, and a shared team workspace for up to 5 seats with invite codes for
           teammates.</p>
       </details>
       <details class="faq-item">
-        <summary>I don't have a Nigerian bank account &mdash; can I still pay?</summary>
+        <summary>I don't have a Nigerian bank account. Can I still pay?</summary>
         <p>Yes. Card payments are accepted from anywhere and settle in naira; the price shown in another currency is
           an approximate guide only. Bank transfer is naira-only, for users paying from a Nigerian bank.</p>
       </details>
@@ -464,13 +493,32 @@
   </section>
 
   <footer>
-    <div>PWAfy &mdash; every file generated in your browser. Built by <a href="https://ayocodes-portfolio.vercel.app/"
+    <div>PWAfy, every file generated in your browser. Built by <a href="https://ayocodes-portfolio.vercel.app/"
         target="_blank" rel="noopener">ayocodes</a>.</div>
     <div>manifest &middot; icons &middot; splash &middot; service-worker</div>
     <div style="margin-top:8px;font-size:12px;">
       <a href="/terms.html">Terms of Service</a> &middot; <a href="/privacy.html">Privacy Policy</a>
     </div>
   </footer>
+
+  <!-- PWAfy AI: a small built-in assistant that knows the site. Runs entirely
+       through PWAfy's own server, no third-party branding is ever shown. -->
+  <div class="ai-launcher" id="aiLauncher" title="Ask PWAfy AI" aria-label="Open PWAfy AI">
+    <span aria-hidden="true">&#128172;</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-head">
+      <div class="ai-panel-title"><span class="dot"></span>PWAfy AI</div>
+      <button class="ai-close" id="btnCloseAi" aria-label="Close PWAfy AI">&#10005;</button>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <input type="text" id="aiInput" placeholder="Ask about pricing, builds, or how PWAfy works&hellip;"
+        maxlength="800">
+      <button class="ai-send" id="btnAiSend" aria-label="Send">&#8593;</button>
+    </div>
+    <div class="ai-credit">PWAfy AI &middot; built by ayocodes</div>
+  </div>
 
   <script src="js/state.js" defer></script>
   <script src="js/generator.js" defer></script>
@@ -479,6 +527,7 @@
   <script src="js/auth.js" defer></script>
   <script src="js/payments.js" defer></script>
   <script src="js/wizard.js" defer></script>
+  <script src="js/assistant.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 

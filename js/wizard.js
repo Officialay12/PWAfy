@@ -1,5 +1,5 @@
 /* ===========================================================
-   PWAfy — wizard.js
+   PWAfy, wizard.js
    Renders each of the 5 wizard steps and handles navigation.
    Built by AYOCODES
    =========================================================== */
@@ -152,7 +152,7 @@ function renderSource() {
           <input type="url" id="scanUrl" placeholder="https://example.com" value="${escapeHtml(state.scanUrl)}">
           <button class="btn-scan" id="btnScan">Scan</button>
         </div>
-        <div class="hint">We'll try to read the title, description, theme color and favicon directly from the page. Many sites block cross-origin reads by design — if that happens, you'll drop straight into manual entry with nothing lost.</div>
+        <div class="hint">We'll try to read the title, description, theme color and favicon directly from the page. Many sites block cross-origin reads by design, if that happens, you'll drop straight into manual entry with nothing lost.</div>
       </div>
       <div id="scanStatus"></div>
       <div id="turnstileWidget"></div>
@@ -185,7 +185,7 @@ function renderScanStatus() {
 
 // Renders (or clears) the Turnstile challenge in the scan panel. A no-op
 // whenever Turnstile isn't configured, so this stays completely inert
-// until a real TURNSTILE_SITE_KEY is set in CONFIG — nothing else in the
+// until a real TURNSTILE_SITE_KEY is set in CONFIG, nothing else in the
 // scan flow behaves differently in that default state.
 function renderTurnstileWidget() {
   const el = document.getElementById("turnstileWidget");
@@ -256,7 +256,7 @@ async function doScan() {
     }
     state.scanStatus = {
       type: "info",
-      message: "Direct read was blocked — trying the scanning proxy\u2026",
+      message: "Direct read was blocked, trying the scanning proxy\u2026",
     };
     renderScanStatus();
     try {
@@ -264,7 +264,7 @@ async function doScan() {
     } catch (err) {
       succeeded = false;
     }
-    // Turnstile tokens are single-use — reset so the next scan needs a fresh solve.
+    // Turnstile tokens are single-use, reset so the next scan needs a fresh solve.
     if (
       TURNSTILE_CONFIGURED &&
       window.turnstile &&
@@ -284,7 +284,7 @@ async function doScan() {
   } else {
     const proxyHint = PROXY_CONFIGURED
       ? "Both the direct read and the proxy were blocked."
-      : "Couldn't read that site automatically — likely blocked by its cross-origin policy. Deploying proxy-worker.js removes this limitation for most sites.";
+      : "Couldn't read that site automatically, likely blocked by its cross-origin policy. Deploying proxy-worker.js removes this limitation for most sites.";
     state.scanStatus = {
       type: "warn",
       message:
@@ -371,7 +371,7 @@ function renderIdentity() {
       <div class="char-count ${state.name.length > 45 ? "over" : ""}">${state.name.length}/45</div>
     </div>
     <div class="field">
-      <label for="fShort">Short name <span style="font-weight:400;color:var(--ink-faint);">— shown under the home screen icon</span></label>
+      <label for="fShort">Short name <span style="font-weight:400;color:var(--ink-faint);">, shown under the home screen icon</span></label>
       <input type="text" id="fShort" maxlength="12" value="${escapeHtml(state.shortName)}" placeholder="Northwind">
       <div class="char-count ${state.shortName.length > 12 ? "over" : ""}">${state.shortName.length}/12</div>
     </div>
@@ -387,14 +387,14 @@ function renderIdentity() {
     </div>
     <div class="field-row">
       <div class="field">
-        <label for="fTheme">Theme color <span style="font-weight:400;color:var(--ink-faint);">— toolbar &amp; status bar</span></label>
+        <label for="fTheme">Theme color <span style="font-weight:400;color:var(--ink-faint);">, toolbar &amp; status bar</span></label>
         <div class="color-field">
           <input type="color" id="fThemeColor" value="${state.themeColor}">
           <input type="text" id="fTheme" value="${state.themeColor}">
         </div>
       </div>
       <div class="field">
-        <label for="fBg">Background color <span style="font-weight:400;color:var(--ink-faint);">— splash screen</span></label>
+        <label for="fBg">Background color <span style="font-weight:400;color:var(--ink-faint);">, splash screen</span></label>
         <div class="color-field">
           <input type="color" id="fBgColor" value="${state.bgColor}">
           <input type="text" id="fBg" value="${state.bgColor}">
@@ -481,7 +481,7 @@ function renderIcon() {
     }
     <div class="field" style="margin-top:22px;">
       <label>Screenshots (optional)</label>
-      <p class="step-desc" style="margin-bottom:10px;">Powers the richer install prompt some browsers show. Upload one or more screenshots of your app — wide ones for desktop, tall ones for mobile.</p>
+      <p class="step-desc" style="margin-bottom:10px;">Powers the richer install prompt some browsers show. Upload one or more screenshots of your app, wide ones for desktop, tall ones for mobile.</p>
       <div class="dropzone" id="screenshotDropzone" style="padding:20px;">
         <input type="file" id="screenshotInput" accept="image/png,image/jpeg,image/webp" multiple>
         <div class="dropzone-title">Add screenshots</div>
@@ -601,10 +601,10 @@ function handleIconFile(file) {
     renderIconWarning();
     return;
   }
-  // 8MB client-side cap — keeps canvas work fast and avoids anyone dropping
+  // 8MB client-side cap, keeps canvas work fast and avoids anyone dropping
   // an unreasonably large file into a browser-only image pipeline.
   if (file.size > 8 * 1024 * 1024) {
-    state.iconWarning = "That file is larger than 8MB — use a smaller image.";
+    state.iconWarning = "That file is larger than 8MB, use a smaller image.";
     renderIconWarning();
     return;
   }
@@ -726,7 +726,7 @@ function renderBehavior() {
 
 let currentQualityScore = null;
 // Turnstile widget state for the scan step. Only used when TURNSTILE_CONFIGURED
-// is true (a real site key is set in CONFIG) — otherwise the widget never
+// is true (a real site key is set in CONFIG), otherwise the widget never
 // renders and turnstileToken stays null, which the proxy worker treats the
 // same as "not configured" and skips verifying.
 let turnstileWidgetId = null;
@@ -736,7 +736,7 @@ function renderGenerate() {
   const strategy = STRATEGIES.find((s) => s.v === state.strategy);
   els.stepBody.innerHTML = `
     <div class="step-title">Generate</div>
-    <p class="step-desc">Review your quality score, then build your files. Everything happens in your browser — nothing is uploaded anywhere.</p>
+    <p class="step-desc">Review your quality score, then build your files. Everything happens in your browser, nothing is uploaded anywhere.</p>
     <div class="score-panel" id="scorePanel"></div>
     <div id="buildHistoryBar"></div>
     ${
@@ -815,7 +815,7 @@ async function runGenerate() {
   btn.disabled = true;
   document.getElementById("doneArea").innerHTML = "";
 
-  // Free-tier build cap only applies to signed-in accounts — there's no way
+  // Free-tier build cap only applies to signed-in accounts, there's no way
   // to enforce a per-browser limit for anonymous visitors, so this check is
   // skipped entirely when signed out (matches the "no account needed for a
   // single build" promise on the marketing page). consume_build_credit() is
@@ -911,7 +911,7 @@ async function runGenerate() {
     }
     if (vapidKeys) {
       // Deliberately its own top-level folder, never mixed into icons/ or
-      // the site root files — see push/README-KEEP-PRIVATE.txt for why.
+      // the site root files, see push/README-KEEP-PRIVATE.txt for why.
       const pushFolder = zip.folder("push");
       pushFolder.file("push-sw-snippet.js", buildPushSwSnippet());
       pushFolder.file(
@@ -960,7 +960,7 @@ async function runGenerate() {
     document.getElementById("doneArea").innerHTML =
       '<div class="err-list">Build failed: ' +
       escapeHtml(err.message || String(err)) +
-      ". Nothing was uploaded — try generating again.</div>";
+      ". Nothing was uploaded, try generating again.</div>";
   } finally {
     btn.disabled = false;
   }
@@ -1043,7 +1043,7 @@ async function runVerifyDeploy() {
   }
   if (!PROXY_CONFIGURED) {
     resultEl.innerHTML =
-      '<div class="status-line warn">This needs the Worker deployed — see CONFIG.PROXY_URL in state.js.</div>';
+      '<div class="status-line warn">This needs the Worker deployed, see CONFIG.PROXY_URL in state.js.</div>';
     return;
   }
   resultEl.innerHTML =

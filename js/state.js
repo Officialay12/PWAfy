@@ -1,5 +1,5 @@
 /* ===========================================================
-   PWAfy — state.js
+   PWAfy, state.js
    Central app state, config and shared helpers.
    Built by AYOCODES
    =========================================================== */
@@ -12,8 +12,7 @@
    - Cloudflare Turnstile (free, unlimited)         -> abuse protection on the scan endpoint
    - Paystack (free to integrate, they take a %      -> cards + pay-with-transfer, NGN
      per transaction, no monthly cost)
-   Leave any value below as-is to run PWAfy with that feature switched off —
-   nothing breaks either way, this is all additive.
+   Leave any value below as-is to run PWAfy with that feature switched off, nothing breaks either way, this is all additive.
 */
 const CONFIG = {
   SUPABASE_URL: "https://erwfyqpltzpvqerxaqpn.supabase.co",
@@ -51,7 +50,7 @@ const state = {
   strategy: "stale-while-revalidate",
   phoneView: "home",
   previewDevice: "phone", // 'phone' | 'desktop'
-  previewPlatform: "android", // 'android' | 'ios' — only affects the install view
+  previewPlatform: "android", // 'android' | 'ios', only affects the install view
   includeSplash: true,
   includeFavicon: true,
   includeShortcuts: false,

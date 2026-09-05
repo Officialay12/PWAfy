@@ -1,10 +1,9 @@
 /* ===========================================================
-   PWAfy — payments.js
-   Card checkout via Paystack Inline (free to integrate — Paystack
+   PWAfy, payments.js
+   Card checkout via Paystack Inline (free to integrate, Paystack
    only takes a per-transaction %, no monthly cost) plus a real
    "pay with bank transfer" flow using Paystack's dedicated virtual
-   account charge type. Verification always happens server-side —
-   never trust the client's "success" callback for a paid feature.
+   account charge type. Verification always happens server-side, never trust the client's "success" callback for a paid feature.
    Built by AYOCODES
    =========================================================== */
 
@@ -20,7 +19,7 @@ const CURRENCY_SYMBOLS = {
 let fxRates = null; // { USD: 0.00061, GBP: ... } per 1 NGN, fetched once
 let selectedCurrency = "NGN";
 
-// Free, keyless FX endpoint — good enough for a display estimate.
+// Free, keyless FX endpoint, good enough for a display estimate.
 // Rates are cached for the session so we don't hammer it on every keystroke.
 async function loadFxRates() {
   if (fxRates) return fxRates;
@@ -37,7 +36,7 @@ async function loadFxRates() {
       sessionStorage.setItem("pwafy_fx", JSON.stringify(fxRates));
     }
   } catch (e) {
-    /* fine — we just show naira if this fails */
+    /* fine, we just show naira if this fails */
   }
   return fxRates;
 }
@@ -82,7 +81,7 @@ function planAmountNgn(plan) {
 function startCardCheckout(plan) {
   if (!PAYSTACK_CONFIGURED) {
     paymentStatus(
-      "Payments aren\u2019t connected yet — this is a preview. Add a Paystack public key in CONFIG to enable checkout.",
+      "Payments aren\u2019t connected yet, this is a preview. Add a Paystack public key in CONFIG to enable checkout.",
       "warn",
     );
     return;
@@ -100,18 +99,17 @@ function startCardCheckout(plan) {
     currency: "NGN",
     metadata: { plan, user_id: auth.user.id },
     callback: function (response) {
-      // This "success" callback is UX-only. The plan is NOT upgraded here —
-      // it flips only once our Worker's webhook independently verifies the
+      // This "success" callback is UX-only. The plan is NOT upgraded here, // it flips only once our Worker's webhook independently verifies the
       // charge with Paystack's secret key server-side. Faking this callback
       // client-side must never be able to grant access.
       paymentStatus(
-        "Payment received — confirming with the server, this can take a few seconds\u2026",
+        "Payment received, confirming with the server, this can take a few seconds\u2026",
         "info",
       );
       pollForPlanUpgrade(plan);
     },
     onClose: function () {
-      paymentStatus("Checkout closed — no charge was made.", "info");
+      paymentStatus("Checkout closed, no charge was made.", "info");
     },
   });
   handler.openIframe();
@@ -134,7 +132,7 @@ async function startTransferCheckout(plan) {
 
   if (!PROXY_CONFIGURED || !PAYSTACK_CONFIGURED) {
     note.innerHTML =
-      '<div class="config-note">Bank transfer isn\u2019t connected yet — this is a preview of the flow. Deploy the Worker and add a Paystack key to enable it for real.</div>';
+      '<div class="config-note">Bank transfer isn\u2019t connected yet, this is a preview of the flow. Deploy the Worker and add a Paystack key to enable it for real.</div>';
     return;
   }
   note.innerHTML = "";
@@ -200,7 +198,7 @@ async function pollForPlanUpgrade(plan, statusEl) {
     if (attempts >= maxAttempts) {
       clearInterval(interval);
       const msg =
-        "Still waiting on confirmation — if you\u2019ve paid, this can take a minute longer; your plan updates automatically the moment it clears.";
+        "Still waiting on confirmation, if you\u2019ve paid, this can take a minute longer; your plan updates automatically the moment it clears.";
       if (statusEl)
         statusEl.innerHTML = '<div class="status-line info">' + msg + "</div>";
     }

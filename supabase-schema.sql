@@ -1,21 +1,21 @@
--- PWAfy — Supabase schema
+-- PWAfy, Supabase schema
 -- Run this once in your Supabase project's SQL editor (Project -> SQL Editor -> New query).
 -- Free tier covers this comfortably (500MB DB, 50k monthly active users).
--- Auth itself (magic-link email sign-in) needs no extra setup — Supabase Auth
+-- Auth itself (magic-link email sign-in) needs no extra setup, Supabase Auth
 -- handles that once you paste your project URL + anon key into CONFIG in js/state.js.
 --
 -- This version is idempotent: every object is guarded with IF EXISTS / IF NOT
 -- EXISTS (or a DROP before CREATE, for objects Postgres doesn't let you guard
 -- directly, like policies). You can re-run the whole file any number of
--- times — on a fresh project or a partially-applied one — without hitting
+-- times, on a fresh project or a partially-applied one, without hitting
 -- "already exists" errors.
 
 -- ---------------------------------------------------------------
 -- profiles: one row per user, tracks their plan.
 -- Only the Worker's Paystack webhook (using the service-role key, which
 -- bypasses RLS) is allowed to UPGRADE `plan`. Users may downgrade their
--- own plan to 'free' themselves — see the "Users can cancel their own
--- plan" policy below — that's the only self-service write a regular
+-- own plan to 'free' themselves, see the "Users can cancel their own
+-- plan" policy below, that's the only self-service write a regular
 -- user gets on this table.
 -- ---------------------------------------------------------------
 create table if not exists public.profiles (
@@ -27,13 +27,26 @@ create table if not exists public.profiles (
   -- plan_expires_at has passed back to 'free'. Always null on the free plan.
   plan_expires_at timestamptz,
   -- Lifetime count of ZIP builds generated while signed in. Only enforced
-  -- against the free-plan cap (1) — studio/agency stay unlimited, but usage
+  -- against the free-plan cap (1), studio/agency stay unlimited, but usage
   -- is still tracked. Incremented atomically by consume_build_credit() below
   -- so two tabs open at once can't both slip past the free-tier limit.
   builds_used integer not null default 0,
+  -- Shown in the account chip instead of the raw email. Null until the
+  -- user sets one (the "what should we call you?" prompt after sign-in),
+  -- in which case the client falls back to the email's local part.
+  -- Only ever written through set_display_name() below, never a direct
+  -- table update, so a paid user editing their name can't accidentally
+  -- collide with the plan-only UPDATE policy further down.
+  display_name text check (char_length(display_name) <= 40),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Adds the column on a database that already ran an earlier version of
+-- this file, since `create table if not exists` above is a no-op once the
+-- table exists.
+alter table public.profiles
+  add column if not exists display_name text check (char_length(display_name) <= 40);
 
 alter table public.profiles enable row level security;
 
@@ -43,7 +56,7 @@ create policy "Users can view their own profile"
   using (auth.uid() = id);
 
 -- Users can write their OWN row only, and only to move themselves to
--- 'free' with no expiry — a self-serve cancel. WITH CHECK validates the
+-- 'free' with no expiry, a self-serve cancel. WITH CHECK validates the
 -- resulting row, so this can never be used to grant studio/agency access;
 -- only the webhook (service-role key, bypasses RLS entirely) can do that.
 drop policy if exists "Users can cancel their own plan" on public.profiles;
@@ -94,7 +107,7 @@ create index if not exists profiles_plan_expiry_idx
 -- Returns true if the build is allowed (and records it), false if a
 -- free-plan user has already used their one lifetime build. Runs
 -- SECURITY DEFINER so it can update builds_used even though the
--- profiles UPDATE policy above only allows plan changes — this
+-- profiles UPDATE policy above only allows plan changes, this
 -- function is the only thing permitted to touch builds_used, and it
 -- only ever touches the caller's own row (auth.uid()).
 -- ---------------------------------------------------------------
@@ -110,7 +123,7 @@ begin
     for update;
 
   if current_plan is null then
-    -- No profile row for this user (shouldn't happen) — fail closed.
+    -- No profile row for this user (shouldn't happen), fail closed.
     return false;
   end if;
 
@@ -123,7 +136,29 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- ---------------------------------------------------------------
+-- set_display_name(): the only way display_name is ever written.
+-- SECURITY DEFINER so it can update the column even though the
+-- profiles UPDATE policy above only allows self-cancelling a plan,
+-- this function only ever touches the caller's own row and only the
+-- display_name column, on any plan. Trims, length-checks, and blanks
+-- to null on an empty string instead of storing "".
+-- ---------------------------------------------------------------
+create or replace function public.set_display_name(p_name text)
+returns void as $$
+declare
+  clean_name text;
+begin
+  clean_name := nullif(trim(p_name), '');
+  if clean_name is not null and char_length(clean_name) > 40 then
+    raise exception 'Display name must be 40 characters or fewer.';
+  end if;
+  update public.profiles set display_name = clean_name where id = auth.uid();
+end;
+$$ language plpgsql security definer;
+
 grant execute on function public.consume_build_credit() to authenticated;
+grant execute on function public.set_display_name(text) to authenticated;
 
 -- ---------------------------------------------------------------
 -- presets: saved brand settings per user
@@ -160,8 +195,7 @@ create policy "Users can delete their own presets"
   on public.presets for delete
   using (auth.uid() = user_id);
 
--- The client-side check in auth.js (free plan -> max 1 preset) is UX only —
--- anyone can call the Supabase REST API directly with the public anon key
+-- The client-side check in auth.js (free plan -> max 1 preset) is UX only, -- anyone can call the Supabase REST API directly with the public anon key
 -- and bypass it. This trigger is the real enforcement: it runs on every
 -- insert no matter how it's made.
 create or replace function public.enforce_preset_limit()
@@ -194,8 +228,7 @@ create trigger before_preset_insert
   for each row execute procedure public.enforce_preset_limit();
 
 -- RLS controls WHO can write a preset row, but says nothing about WHAT is
--- in it. This validates config's shape and size before it's ever written —
--- a malicious or buggy client can no longer stuff arbitrary/oversized JSON
+-- in it. This validates config's shape and size before it's ever written, -- a malicious or buggy client can no longer stuff arbitrary/oversized JSON
 -- into it via a direct REST call. Bounds mirror what auth.js's
 -- saveCurrentAsPreset() actually sends; adjust if that shape changes.
 create or replace function public.validate_preset_config()
@@ -263,7 +296,7 @@ create trigger before_preset_validate
 -- ---------------------------------------------------------------
 -- builds: history of successful generations, so a signed-in user can
 -- see recent builds and reload a config without re-uploading the icon
--- (the icon itself is never stored here — same as presets, this only
+-- (the icon itself is never stored here, same as presets, this only
 -- ever holds the text/color config, not image data).
 -- ---------------------------------------------------------------
 create table if not exists public.builds (
@@ -321,7 +354,7 @@ create trigger before_build_insert
   before insert on public.builds
   for each row execute procedure public.validate_build_config();
 
--- Keeps history from growing unbounded per user (generous cap — this is
+-- Keeps history from growing unbounded per user (generous cap, this is
 -- about preventing abuse, not limiting normal use).
 create or replace function public.enforce_build_history_cap()
 returns trigger as $$
@@ -348,7 +381,7 @@ create trigger after_build_insert_cap
 -- owner; members join via a single-use, expiring invite code. The
 -- entire feature is: teammates can see each other's saved presets.
 -- Membership is only ever changed through the security-definer
--- functions below — there is deliberately no insert/update/delete
+-- functions below, there is deliberately no insert/update/delete
 -- policy on team_members for regular users, so joining or being added
 -- to a team can't happen via a direct REST call, only through
 -- create_team()/redeem_team_invite(), which enforce the actual rules
@@ -369,8 +402,7 @@ create table if not exists public.team_members (
   primary key (team_id, user_id)
 );
 
--- gen_random_bytes() (used for invite codes below) needs pgcrypto —
--- Supabase projects usually have this on by default, but this makes
+-- gen_random_bytes() (used for invite codes below) needs pgcrypto, -- Supabase projects usually have this on by default, but this makes
 -- the script work standalone regardless.
 create extension if not exists pgcrypto;
 
@@ -532,8 +564,7 @@ $$ language plpgsql security definer;
 
 grant execute on function public.get_team_roster(uuid) to authenticated;
 
--- Extends preset visibility to teammates (the actual point of a team —
--- shared brand presets across a small agency). Writing stays owner-only;
+-- Extends preset visibility to teammates (the actual point of a team, -- shared brand presets across a small agency). Writing stays owner-only;
 -- this only widens the SELECT policy, replacing the single-user one.
 drop policy if exists "Users can view their own presets" on public.presets;
 drop policy if exists "Users can view their own or team presets" on public.presets;
